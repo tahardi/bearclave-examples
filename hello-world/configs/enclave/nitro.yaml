@@ -1,0 +1,8 @@
+platform: "nitro"
+enclave:
+  network: "tcp"
+  addr: "4:8083"
+proxy:
+  network: "tcp"
+  addr: "3:8082"
+  route: "app/v1"

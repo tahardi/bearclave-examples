@@ -1,0 +1,32 @@
+platform: "sev"
+nonclave:
+  route: "app/v1"
+  measurement: |
+    {
+      "version": 5,
+      "guest_svn": 0,
+      "policy": 196608,
+      "family_id": "AAAAAAAAAAAAAAAAAAAAAA==",
+      "image_id": "AAAAAAAAAAAAAAAAAAAAAA==",
+      "vmpl": 0,
+      "current_tcb": 16004385700791189508,
+      "platform_info": 37,
+      "signer_info": 0,
+      "measurement": "t0fVVFLguekHl3Cknjl8Xm2Vc1geJG2nuqxPKLXNxbG20ZJRuO5gD9FqNwj1hAbz",
+      "host_data": "AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA=",
+      "id_key_digest": "AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA",
+      "author_key_digest": "AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA",
+      "report_id": "mQCG/KnohXCpN98FyZ5vQ2JknQdZ2AhhsnOJbOLp58U=",
+      "report_id_ma": "//////////////////////////////////////////8=",
+      "reported_tcb": 16004385700791189508,
+      "chip_id": "BGnXVODUH+qJbpsQKqxKve5nZ2TmfU4yuw4baIU9u7v/MdJmOLCc7wFFxvsFLDggUNohMViMUOBfeqsK480+AQ==",
+      "committed_tcb": 16004385700791189508,
+      "current_build": 35,
+      "current_minor": 55,
+      "current_major": 1,
+      "committed_build": 35,
+      "committed_minor": 55,
+      "committed_major": 1,
+      "launch_tcb": 16004385700791189508,
+      "cpuid_1eax_fms": 10489617
+    }

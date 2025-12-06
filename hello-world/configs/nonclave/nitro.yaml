@@ -1,0 +1,15 @@
+platform: "nitro"
+nonclave:
+  route: "app/v1"
+  measurement: |
+    {
+      "pcrs": {
+        "0": "dmvMXxZJCukmc2FcyLQwOhGq8pj7Qvcwf+5OEV5+hRBDm9VI8STWytm3frnDiCoH",
+        "1": "S01bNmGz78EpIJAMgOEm5M54PFIt5sAqKlv3rzorkye4Z3bxiOS+HBxAShKdvaST",
+        "2": "IkydZKPV2CZ0t45zxQzB8lIneGK7rcC8htnRDQmEwvFEFLfj33nyTQscM28xsucX",
+        "3": "AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA",
+        "4": "qCPabIHXU+nhGcZdNOlh6t6ts85vPpXbEhRxY1f+azLcAvahbgsBN+sKbCfnE+yq",
+        "8": "AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA"
+      },
+      "module_id": ""
+    }
