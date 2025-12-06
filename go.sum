@@ -68,6 +68,8 @@ github.com/tahardi/bearclave v0.0.0-20251206134542-3586a5b44aef h1:3S8A1TTBWIDqH
 github.com/tahardi/bearclave v0.0.0-20251206134542-3586a5b44aef/go.mod h1:awh7LgJECufcpF6Dw+6t7w7D/UXBC0pKzBVvUga5QYw=
 github.com/tahardi/bearclave v0.0.0-20251206143932-7ad03d185d17 h1:rc2N4Fn8HO+3uoawMejR5k4xEpcsxX0YtFhIEt58u9A=
 github.com/tahardi/bearclave v0.0.0-20251206143932-7ad03d185d17/go.mod h1:awh7LgJECufcpF6Dw+6t7w7D/UXBC0pKzBVvUga5QYw=
+github.com/tahardi/bearclave v0.0.0-20251206150855-48008631256a h1:LHvIV118aTZmOhYRUiSoHV5QTyIpPK2up274aun6u9s=
+github.com/tahardi/bearclave v0.0.0-20251206150855-48008631256a/go.mod h1:awh7LgJECufcpF6Dw+6t7w7D/UXBC0pKzBVvUga5QYw=
 github.com/x448/float16 v0.8.4 h1:qLwI1I70+NjRFUR3zs1JPUCgaCXSh3SW62uAKT1mSBM=
 github.com/x448/float16 v0.8.4/go.mod h1:14CWIYCyZA/cWjXOioeEpHeN/83MdbZDRQHoFcYsOfg=
 github.com/yuin/goldmark v1.2.1/go.mod h1:3hX8gzYuyVAZsxl0MRgGTJEmQBFcNTphYh9decYSb74=
