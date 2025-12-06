@@ -1,0 +1,8 @@
+platform: "sev"
+enclave:
+  network: "tcp"
+  addr: "http://127.0.0.1:8083"
+proxy:
+  network: "tcp"
+  addr: "http://127.0.0.1:8082"
+  route: "app/v1"
