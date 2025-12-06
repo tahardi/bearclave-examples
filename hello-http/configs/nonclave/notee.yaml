@@ -1,0 +1,4 @@
+platform: "notee"
+nonclave:
+  route: "app/v1"
+  measurement: "Not a TEE platform. Code measurements are not real."

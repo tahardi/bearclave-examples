@@ -1,8 +1,8 @@
 platform: "sev"
 enclave:
   network: "tcp"
-  addr: "127.0.0.1:8083"
+  addr: "http://127.0.0.1:8083"
 proxy:
   network: "tcp"
-  addr: "127.0.0.1:8082"
+  addr: "http://127.0.0.1:8082"
   route: "app/v1"
