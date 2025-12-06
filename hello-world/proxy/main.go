@@ -26,7 +26,7 @@ func MakeAttestUserDataHandler(
 		req := tee.AttestUserDataRequest{}
 		err := json.NewDecoder(r.Body).Decode(&req)
 		if err != nil {
-			logger.Error("decoding request", slog.String("error", err.Error()), "")
+			logger.Error("decoding request", slog.String("error", err.Error()))
 			tee.WriteError(w, fmt.Errorf("decoding request: %w", err))
 			return
 		}
@@ -37,7 +37,7 @@ func MakeAttestUserDataHandler(
 		logger.Info("sending userdata to enclave...", slog.String("userdata", string(req.Data)))
 		err = socket.Send(sendCtx, enclaveAddr, req.Data)
 		if err != nil {
-			logger.Error("sending userdata to enclave", slog.String("error", err.Error()), "")
+			logger.Error("sending userdata to enclave", slog.String("error", err.Error()))
 			tee.WriteError(w, fmt.Errorf("sending userdata to enclave: %w", err))
 			return
 		}
@@ -48,7 +48,7 @@ func MakeAttestUserDataHandler(
 		logger.Info("waiting for attestation from enclave...")
 		attestBytes, err := socket.Receive(receiveCtx)
 		if err != nil {
-			logger.Error("receiving attestation from enclave", slog.String("error", err.Error()), "")
+			logger.Error("receiving attestation from enclave", slog.String("error", err.Error()))
 			tee.WriteError(w, fmt.Errorf("receiving attestation from enclave: %w", err))
 			return
 		}
@@ -56,7 +56,7 @@ func MakeAttestUserDataHandler(
 		attestResult := bearclave.AttestResult{}
 		err = json.Unmarshal(attestBytes, &attestResult)
 		if err != nil {
-			logger.Error("unmarshaling attestation", slog.String("error", err.Error()), "")
+			logger.Error("unmarshaling attestation", slog.String("error", err.Error()))
 			tee.WriteError(w, fmt.Errorf("unmarshaling attestation: %w", err))
 			return
 		}
