@@ -59,9 +59,10 @@ func main() {
 	got, err := verifier.Verify(att, bearclave.WithMeasurement(measurement))
 	if err != nil {
 		logger.Error("verifying attestation", slog.String("error", err.Error()))
+		return
 	}
 
-	if len(got.UserData) == 0 || !bytes.Contains(got.UserData, want) {
+	if !bytes.Contains(got.UserData, want) {
 		logger.Error("userdata verification failed")
 		return
 	}
