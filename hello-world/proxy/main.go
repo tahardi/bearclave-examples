@@ -31,19 +31,22 @@ func MakeAttestUserDataHandler(
 			return
 		}
 
-		ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
-		defer cancel()
+		sendCtx, sendCancel := context.WithTimeout(context.Background(), 5*time.Second)
+		defer sendCancel()
 
 		logger.Info("sending userdata to enclave...", slog.String("userdata", string(req.Data)))
-		err = socket.Send(ctx, enclaveAddr, req.Data)
+		err = socket.Send(sendCtx, enclaveAddr, req.Data)
 		if err != nil {
 			logger.Error("sending userdata to enclave", slog.String("error", err.Error()), "")
 			tee.WriteError(w, fmt.Errorf("sending userdata to enclave: %w", err))
 			return
 		}
 
+		receiveCtx, receiveCancel := context.WithTimeout(context.Background(), 5*time.Second)
+		defer receiveCancel()
+
 		logger.Info("waiting for attestation from enclave...")
-		attestBytes, err := socket.Receive(ctx)
+		attestBytes, err := socket.Receive(receiveCtx)
 		if err != nil {
 			logger.Error("receiving attestation from enclave", slog.String("error", err.Error()), "")
 			tee.WriteError(w, fmt.Errorf("receiving attestation from enclave: %w", err))
