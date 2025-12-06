@@ -4,7 +4,7 @@ go 1.25.5
 
 require (
 	github.com/spf13/viper v1.21.0
-	github.com/tahardi/bearclave v0.0.0-20251206133114-2175534ad086
+	github.com/tahardi/bearclave v0.0.0-20251206134542-3586a5b44aef
 )
 
 require (
