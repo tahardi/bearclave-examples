@@ -6,10 +6,20 @@ import (
 	"log/slog"
 	"net/http"
 	"os"
+	"time"
 
 	"bearclave-examples/internal/setup"
 
 	"github.com/tahardi/bearclave/tee"
+)
+
+const (
+	Megabyte = 1 << 20
+	DefaultReadHeaderTimeout = 10 * time.Second
+	DefaultReadTimeout       = 15 * time.Second
+	DefaultWriteTimeout      = 15 * time.Second
+	DefaultIdleTimeout       = 60 * time.Second
+	DefaultMaxHeaderBytes    = 1 * Megabyte // 1MB
 )
 
 var configFile string
@@ -41,6 +51,11 @@ func main() {
 	server := &http.Server{
 		Addr:    "0.0.0.0:8080",
 		Handler: proxy,
+		MaxHeaderBytes: DefaultMaxHeaderBytes,
+		ReadHeaderTimeout: DefaultReadHeaderTimeout,
+		ReadTimeout: DefaultReadTimeout,
+		WriteTimeout: DefaultWriteTimeout,
+		IdleTimeout: DefaultIdleTimeout,
 	}
 
 	logger.Info("proxy server started", slog.String("addr", server.Addr))
