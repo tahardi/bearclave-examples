@@ -3,9 +3,10 @@ package main
 import (
 	"bytes"
 	"flag"
-	"fmt"
 	"log/slog"
+	"net"
 	"os"
+	"strconv"
 
 	"bearclave-examples/internal/setup"
 
@@ -13,8 +14,16 @@ import (
 	"github.com/tahardi/bearclave/tee"
 )
 
-var host string
-var configFile string
+const (
+	DefaultHost = "127.0.0.1"
+	DefaultPort = 8080
+)
+
+var (
+	configFile string
+	host string
+	port int
+)
 
 func main() {
 	flag.StringVar(
@@ -27,8 +36,14 @@ func main() {
 	flag.StringVar(
 		&host,
 		"host",
-		"127.0.0.1",
+		DefaultHost,
 		"The hostname of the enclave proxy to connect to (default: 127.0.0.1)",
+	)
+	flag.IntVar(
+		&port,
+		"port",
+		DefaultPort,
+		"The port of the enclave proxy to connect to (default: 8080)",
 	)
 	flag.Parse()
 
@@ -47,7 +62,7 @@ func main() {
 	}
 
 	want := []byte("Hello, world!")
-	url := fmt.Sprintf("http://%s:%d", host, 8080)
+	url := "http://" + net.JoinHostPort(host, strconv.Itoa(port))
 	client := tee.NewClient(url)
 	att, err := client.AttestUserData(want)
 	if err != nil {
@@ -63,7 +78,11 @@ func main() {
 	}
 
 	if !bytes.Contains(got.UserData, want) {
-		logger.Error("userdata verification failed")
+		logger.Error(
+			"verifying userdata",
+			slog.String("want", string(want)),
+			slog.String("got", string(got.UserData)),
+		)
 		return
 	}
 	logger.Info("verified userdata", slog.String("userdata", string(got.UserData)))

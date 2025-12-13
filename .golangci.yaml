@@ -1,5 +1,10 @@
 version: "2"
 linters:
+  settings:
+    tagliatelle:
+      case:
+        rules:
+          json: snake
   exclusions:
     generated: lax
     presets:
@@ -11,6 +16,59 @@ linters:
       - third_party$
       - builtin$
       - examples$
+  enable:
+    - asciicheck
+    - bidichk
+    - containedctx
+    - contextcheck
+    - durationcheck
+    - embeddedstructfieldcheck
+    - err113
+    - errcheck
+    - errchkjson
+    - errname
+    - errorlint
+    - exhaustive
+    - fatcontext
+    - forcetypeassert
+    - funcorder
+    - gocheckcompilerdirectives
+    - gocritic
+    - godoclint
+    - godox
+    - gosec
+    - govet
+    - iface
+    - importas
+    - inamedparam
+    - ineffassign
+    - loggercheck
+    - makezero
+    - mirror
+    - mnd
+    - modernize
+    - musttag
+    - nilnesserr
+    - nilnil
+    - noctx
+    - nosprintfhostport
+    - perfsprint
+    - prealloc
+    - predeclared
+    - protogetter
+    - reassign
+    - recvcheck
+    - revive
+    - sloglint
+    - staticcheck
+    - tagalign
+    - tagliatelle
+    - testifylint
+    - thelper
+    - unconvert
+    - unused
+    - wastedassign
+    - whitespace
 formatters:
   exclusions:
     generated: lax

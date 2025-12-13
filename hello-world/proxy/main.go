@@ -17,6 +17,17 @@ import (
 	"github.com/tahardi/bearclave/tee"
 )
 
+const (
+	Megabyte = 1 << 20
+	DefaultRequestTimeout = 5 * time.Second
+	DefaultReadHeaderTimeout = 10 * time.Second
+	DefaultReadTimeout       = 15 * time.Second
+	DefaultWriteTimeout      = 15 * time.Second
+	DefaultIdleTimeout       = 60 * time.Second
+	DefaultMaxHeaderBytes    = 1 * Megabyte // 1MB
+
+)
+
 func MakeAttestUserDataHandler(
 	socket *tee.Socket,
 	enclaveAddr string,
@@ -31,7 +42,7 @@ func MakeAttestUserDataHandler(
 			return
 		}
 
-		sendCtx, sendCancel := context.WithTimeout(context.Background(), 5*time.Second)
+		sendCtx, sendCancel := context.WithTimeout(r.Context(), DefaultRequestTimeout)
 		defer sendCancel()
 
 		logger.Info("sending userdata to enclave...", slog.String("userdata", string(req.Data)))
@@ -42,7 +53,7 @@ func MakeAttestUserDataHandler(
 			return
 		}
 
-		receiveCtx, receiveCancel := context.WithTimeout(context.Background(), 5*time.Second)
+		receiveCtx, receiveCancel := context.WithTimeout(r.Context(), DefaultRequestTimeout)
 		defer receiveCancel()
 
 		logger.Info("waiting for attestation from enclave...")
@@ -102,6 +113,11 @@ func main() {
 	server := &http.Server{
 		Addr:    "0.0.0.0:8080",
 		Handler: serverMux,
+		MaxHeaderBytes: DefaultMaxHeaderBytes,
+		ReadHeaderTimeout: DefaultReadHeaderTimeout,
+		ReadTimeout: DefaultReadTimeout,
+		WriteTimeout: DefaultWriteTimeout,
+		IdleTimeout: DefaultIdleTimeout,
 	}
 
 	logger.Info("proxy server started", slog.String("addr", server.Addr))
