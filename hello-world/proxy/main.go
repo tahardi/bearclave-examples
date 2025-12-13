@@ -17,16 +17,7 @@ import (
 	"github.com/tahardi/bearclave/tee"
 )
 
-const (
-	Megabyte = 1 << 20
-	DefaultRequestTimeout = 5 * time.Second
-	DefaultReadHeaderTimeout = 10 * time.Second
-	DefaultReadTimeout       = 15 * time.Second
-	DefaultWriteTimeout      = 15 * time.Second
-	DefaultIdleTimeout       = 60 * time.Second
-	DefaultMaxHeaderBytes    = 1 * Megabyte // 1MB
-
-)
+const DefaultTimeout = 5 * time.Second
 
 func MakeAttestUserDataHandler(
 	socket *tee.Socket,
@@ -42,7 +33,7 @@ func MakeAttestUserDataHandler(
 			return
 		}
 
-		sendCtx, sendCancel := context.WithTimeout(r.Context(), DefaultRequestTimeout)
+		sendCtx, sendCancel := context.WithTimeout(r.Context(), DefaultTimeout)
 		defer sendCancel()
 
 		logger.Info("sending userdata to enclave...", slog.String("userdata", string(req.Data)))
@@ -53,7 +44,7 @@ func MakeAttestUserDataHandler(
 			return
 		}
 
-		receiveCtx, receiveCancel := context.WithTimeout(r.Context(), DefaultRequestTimeout)
+		receiveCtx, receiveCancel := context.WithTimeout(r.Context(), DefaultTimeout)
 		defer receiveCancel()
 
 		logger.Info("waiting for attestation from enclave...")
@@ -98,11 +89,19 @@ func main() {
 	}
 	logger.Info("loaded config", slog.Any(configFile, config))
 
-	socket, err := tee.NewSocket(config.Platform, config.Proxy.Network, config.Proxy.Addr)
+	ctx, cancel := context.WithTimeout(context.Background(), DefaultTimeout)
+	defer cancel()
+	socket, err := tee.NewSocket(
+		ctx,
+		config.Platform,
+		config.Proxy.Network,
+		config.Proxy.Addr,
+	)
 	if err != nil {
 		logger.Error("making socket", slog.String("error", err.Error()))
 		return
 	}
+	defer socket.Close()
 
 	serverMux := http.NewServeMux()
 	serverMux.Handle(
@@ -111,13 +110,13 @@ func main() {
 	)
 
 	server := &http.Server{
-		Addr:    "0.0.0.0:8080",
-		Handler: serverMux,
-		MaxHeaderBytes: DefaultMaxHeaderBytes,
-		ReadHeaderTimeout: DefaultReadHeaderTimeout,
-		ReadTimeout: DefaultReadTimeout,
-		WriteTimeout: DefaultWriteTimeout,
-		IdleTimeout: DefaultIdleTimeout,
+		Addr:              "0.0.0.0:8080",
+		Handler:           serverMux,
+		MaxHeaderBytes:    tee.DefaultMaxHeaderBytes,
+		ReadHeaderTimeout: tee.DefaultReadHeaderTimeout,
+		ReadTimeout:       tee.DefaultReadTimeout,
+		WriteTimeout:      tee.DefaultWriteTimeout,
+		IdleTimeout:       tee.DefaultIdleTimeout,
 	}
 
 	logger.Info("proxy server started", slog.String("addr", server.Addr))

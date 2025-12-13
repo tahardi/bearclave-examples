@@ -1,16 +1,20 @@
 package main
 
 import (
+	"context"
 	"flag"
 	"log/slog"
 	"net/http"
 	"os"
+	"time"
 
 	"bearclave-examples/internal/setup"
 
 	"github.com/tahardi/bearclave"
 	"github.com/tahardi/bearclave/tee"
 )
+
+const DefaultTimeout = 5 * time.Second
 
 var configFile string
 
@@ -44,7 +48,10 @@ func main() {
 		tee.MakeAttestUserDataHandler(attester, logger),
 	)
 
+	ctx, cancel := context.WithTimeout(context.Background(), DefaultTimeout)
+	defer cancel()
 	server, err := tee.NewServer(
+		ctx,
 		config.Platform,
 		config.Enclave.Network,
 		config.Enclave.Addr,
@@ -56,7 +63,7 @@ func main() {
 	}
 
 	logger.Info("enclave server started", slog.String("addr", server.Addr()))
-	err = server.Serve()
+	err = server.ListenAndServe()
 	if err != nil {
 		logger.Error("enclave server error", slog.String("error", err.Error()))
 	}
