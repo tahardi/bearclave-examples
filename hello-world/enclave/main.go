@@ -6,12 +6,15 @@ import (
 	"flag"
 	"log/slog"
 	"os"
+	"time"
 
 	"bearclave-examples/internal/setup"
 
 	"github.com/tahardi/bearclave"
 	"github.com/tahardi/bearclave/tee"
 )
+
+const DefaultTimeout = 5 * time.Second
 
 var configFile string
 
@@ -39,7 +42,10 @@ func main() {
 		return
 	}
 
+	ctx, cancel := context.WithTimeout(context.Background(), DefaultTimeout)
+	defer cancel()
 	socket, err := tee.NewSocket(
+		ctx,
 		config.Platform,
 		config.Enclave.Network,
 		config.Enclave.Addr,
@@ -59,7 +65,7 @@ func main() {
 		}
 
 		logger.Info("attesting userdata", slog.String("userdata", string(userdata)))
-		attestResult, err := attester.Attest(bearclave.WithUserData(userdata))
+		attestResult, err := attester.Attest(bearclave.WithAttestUserData(userdata))
 		if err != nil {
 			logger.Error("attesting userdata", slog.String("error", err.Error()))
 			return
