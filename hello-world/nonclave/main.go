@@ -10,22 +10,22 @@ import (
 	"strconv"
 	"time"
 
+	"bearclave-examples/internal/networking"
 	"bearclave-examples/internal/setup"
 
-	"github.com/tahardi/bearclave"
 	"github.com/tahardi/bearclave/tee"
 )
 
 const (
-	DefaultHost = "127.0.0.1"
-	DefaultPort = 8080
+	DefaultHost    = "127.0.0.1"
+	DefaultPort    = 8080
 	DefaultTimeout = 5 * time.Second
 )
 
 var (
 	configFile string
-	host string
-	port int
+	host       string
+	port       int
 )
 
 func main() {
@@ -58,25 +58,30 @@ func main() {
 	}
 	logger.Info("loaded config", slog.Any(configFile, config))
 
-	verifier, err := bearclave.NewVerifier(config.Platform)
+	verifier, err := tee.NewVerifier(config.Platform)
 	if err != nil {
 		logger.Error("making verifier", slog.String("error", err.Error()))
 		return
 	}
 
+	nonce := []byte("random nonce here")
 	want := []byte("Hello, world!")
 	url := "http://" + net.JoinHostPort(host, strconv.Itoa(port))
-	client := tee.NewClient(url)
+	client := networking.NewClient(url)
 	ctx, cancel := context.WithTimeout(context.Background(), DefaultTimeout)
 	defer cancel()
-	att, err := client.AttestUserData(ctx, want)
+	att, err := client.Attest(ctx, nonce, want)
 	if err != nil {
 		logger.Error("attesting userdata", slog.String("error", err.Error()))
 		return
 	}
 
 	measurement := config.Nonclave.Measurement
-	got, err := verifier.Verify(att, bearclave.WithVerifyMeasurement(measurement))
+	got, err := verifier.Verify(
+		att,
+		tee.WithVerifyMeasurement(measurement),
+		tee.WithVerifyNonce(nonce),
+	)
 	if err != nil {
 		logger.Error("verifying attestation", slog.String("error", err.Error()))
 		return

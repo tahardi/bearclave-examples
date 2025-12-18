@@ -8,9 +8,9 @@ import (
 	"os"
 	"time"
 
+	"bearclave-examples/internal/networking"
 	"bearclave-examples/internal/setup"
 
-	"github.com/tahardi/bearclave"
 	"github.com/tahardi/bearclave/tee"
 )
 
@@ -36,7 +36,7 @@ func main() {
 	}
 	logger.Info("loaded config", slog.Any(configFile, config))
 
-	attester, err := bearclave.NewAttester(config.Platform)
+	attester, err := tee.NewAttester(config.Platform)
 	if err != nil {
 		logger.Error("making attester", slog.String("error", err.Error()))
 		return
@@ -58,16 +58,31 @@ func main() {
 	for {
 		logger.Info("waiting to receive userdata from enclave-proxy...")
 		ctx := context.Background()
-		userdata, err := socket.Receive(ctx)
+		reqBytes, err := socket.Receive(ctx)
 		if err != nil {
 			logger.Error("receiving userdata", slog.String("error", err.Error()))
 			return
 		}
 
-		logger.Info("attesting userdata", slog.String("userdata", string(userdata)))
-		attestResult, err := attester.Attest(bearclave.WithAttestUserData(userdata))
+		req := networking.AttestRequest{}
+		err = json.Unmarshal(reqBytes, &req)
 		if err != nil {
-			logger.Error("attesting userdata", slog.String("error", err.Error()))
+			logger.Error("unmarshaling request", slog.String("error", err.Error()))
+			return
+		}
+
+		userdata := req.UserData
+		logger.Info(
+			"attesting",
+			slog.String("nonce", string(req.Nonce)),
+			slog.String("userdata", string(userdata)),
+		)
+		attestResult, err := attester.Attest(
+			tee.WithAttestNonce(req.Nonce),
+			tee.WithAttestUserData(userdata),
+		)
+		if err != nil {
+			logger.Error("attesting", slog.String("error", err.Error()))
 			return
 		}
 

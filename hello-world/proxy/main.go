@@ -6,41 +6,42 @@ import (
 	"errors"
 	"flag"
 	"fmt"
+	"io"
 	"log/slog"
 	"net/http"
 	"os"
 	"time"
 
+	"bearclave-examples/internal/networking"
 	"bearclave-examples/internal/setup"
 
-	"github.com/tahardi/bearclave"
 	"github.com/tahardi/bearclave/tee"
 )
 
 const DefaultTimeout = 5 * time.Second
 
-func MakeAttestUserDataHandler(
+func MakeAttestHandler(
 	socket *tee.Socket,
 	enclaveAddr string,
 	logger *slog.Logger,
 ) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
-		req := tee.AttestUserDataRequest{}
-		err := json.NewDecoder(r.Body).Decode(&req)
+		bodyBytes, err := io.ReadAll(r.Body)
 		if err != nil {
-			logger.Error("decoding request", slog.String("error", err.Error()))
-			tee.WriteError(w, fmt.Errorf("decoding request: %w", err))
+			logger.Error("reading request body", slog.String("error", err.Error()))
+			tee.WriteError(w, fmt.Errorf("reading request body: %w", err))
 			return
 		}
+		defer r.Body.Close()
 
 		sendCtx, sendCancel := context.WithTimeout(r.Context(), DefaultTimeout)
 		defer sendCancel()
 
-		logger.Info("sending userdata to enclave...", slog.String("userdata", string(req.Data)))
-		err = socket.Send(sendCtx, enclaveAddr, req.Data)
+		logger.Info("sending attestation request to enclave...")
+		err = socket.Send(sendCtx, enclaveAddr, bodyBytes)
 		if err != nil {
-			logger.Error("sending userdata to enclave", slog.String("error", err.Error()))
-			tee.WriteError(w, fmt.Errorf("sending userdata to enclave: %w", err))
+			logger.Error("sending attestation to enclave", slog.String("error", err.Error()))
+			tee.WriteError(w, fmt.Errorf("sending attestation to enclave: %w", err))
 			return
 		}
 
@@ -55,7 +56,7 @@ func MakeAttestUserDataHandler(
 			return
 		}
 
-		attestResult := bearclave.AttestResult{}
+		attestResult := tee.AttestResult{}
 		err = json.Unmarshal(attestBytes, &attestResult)
 		if err != nil {
 			logger.Error("unmarshaling attestation", slog.String("error", err.Error()))
@@ -63,7 +64,7 @@ func MakeAttestUserDataHandler(
 			return
 		}
 
-		resp := tee.AttestUserDataResponse{Attestation: &attestResult}
+		resp := networking.AttestResponse{Attestation: &attestResult}
 		tee.WriteResponse(w, resp)
 		logger.Info("sent attestation to client")
 	}
@@ -105,8 +106,8 @@ func main() {
 
 	serverMux := http.NewServeMux()
 	serverMux.Handle(
-		"POST "+tee.AttestUserDataPath,
-		MakeAttestUserDataHandler(socket, config.Enclave.Addr, logger),
+		"POST "+networking.AttestPath,
+		MakeAttestHandler(socket, config.Enclave.Addr, logger),
 	)
 
 	server := &http.Server{
