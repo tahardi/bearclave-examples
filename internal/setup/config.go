@@ -19,12 +19,13 @@ type Config struct {
 type Enclave struct {
 	Network string `mapstructure:"network"`
 	Addr    string `mapstructure:"addr"`
+	Route   string `mapstructure:"route"`
 }
 
 type Proxy struct {
 	Network string `mapstructure:"network"`
-	Addr    string `mapstructure:"addr"`
-	Route   string `mapstructure:"route"`
+	InAddr  string `mapstructure:"in_addr"`
+	OutAddr string `mapstructure:"out_addr"`
 }
 
 type Nonclave struct {

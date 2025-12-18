@@ -34,7 +34,7 @@ func makeRequest(
 	return req
 }
 
-func TestMakeAttestHandler(t *testing.T) {
+func TestMakeAttestUserDataHandler(t *testing.T) {
 	t.Run("happy path", func(t *testing.T) {
 		// given
 		data := []byte("hello world")
@@ -49,10 +49,10 @@ func TestMakeAttestHandler(t *testing.T) {
 		logger := slog.New(slog.NewTextHandler(&logBuffer, nil))
 
 		recorder := httptest.NewRecorder()
-		body := networking.AttestRequest{Nonce: nonce, UserData: data}
-		req := makeRequest(t, "POST", networking.AttestPath, body)
+		body := networking.AttestUserDataRequest{Nonce: nonce, UserData: data}
+		req := makeRequest(t, "POST", networking.AttestUserDataPath, body)
 
-		handler := networking.MakeAttestHandler(attester, logger)
+		handler := networking.MakeAttestUserDataHandler(attester, logger)
 
 		// when
 		handler.ServeHTTP(recorder, req)
@@ -62,7 +62,7 @@ func TestMakeAttestHandler(t *testing.T) {
 		assert.Contains(t, logBuffer.String(), base64.StdEncoding.EncodeToString(nonce))
 		assert.Contains(t, logBuffer.String(), base64.StdEncoding.EncodeToString(data))
 
-		response := networking.AttestResponse{}
+		response := networking.AttestUserDataResponse{}
 		err := json.NewDecoder(recorder.Body).Decode(&response)
 		require.NoError(t, err)
 		assert.Equal(t, attestation, response.Attestation)
@@ -77,9 +77,9 @@ func TestMakeAttestHandler(t *testing.T) {
 
 		recorder := httptest.NewRecorder()
 		body := []byte("invalid json")
-		req := makeRequest(t, "POST", networking.AttestPath, body)
+		req := makeRequest(t, "POST", networking.AttestUserDataPath, body)
 
-		handler := networking.MakeAttestHandler(attester, logger)
+		handler := networking.MakeAttestUserDataHandler(attester, logger)
 
 		// when
 		handler.ServeHTTP(recorder, req)
@@ -103,10 +103,10 @@ func TestMakeAttestHandler(t *testing.T) {
 		logger := slog.New(slog.NewTextHandler(&logBuffer, nil))
 
 		recorder := httptest.NewRecorder()
-		body := networking.AttestRequest{Nonce: nonce, UserData: data}
-		req := makeRequest(t, "POST", networking.AttestPath, body)
+		body := networking.AttestUserDataRequest{Nonce: nonce, UserData: data}
+		req := makeRequest(t, "POST", networking.AttestUserDataPath, body)
 
-		handler := networking.MakeAttestHandler(attester, logger)
+		handler := networking.MakeAttestUserDataHandler(attester, logger)
 
 		// when
 		handler.ServeHTTP(recorder, req)

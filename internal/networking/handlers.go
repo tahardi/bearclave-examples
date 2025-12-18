@@ -1,33 +1,108 @@
 package networking
 
 import (
+	"context"
+	"crypto/sha256"
 	"encoding/base64"
 	"encoding/json"
 	"fmt"
+	"io"
 	"log/slog"
 	"net/http"
+	"time"
 
 	"github.com/tahardi/bearclave/tee"
 )
 
 const (
-	AttestPath = "/attest"
+	AttestAPICallPath   = "/attest-api-call"
+	AttestUserDataPath = "/attest-user-data"
 )
 
-type AttestRequest struct {
+type AttestAPICallRequest struct {
+	Method string `json:"method"`
+	URL    string `json:"url"`
+}
+
+type AttestAPICallResponse struct {
+	Attestation *tee.AttestResult `json:"attestation"`
+	Response    []byte            `json:"response"`
+}
+
+func MakeAttestAPICallHandler(
+	ctxTimeout time.Duration,
+	attester tee.Attester,
+	client *http.Client,
+	logger *slog.Logger,
+) http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		apiCallReq := AttestAPICallRequest{}
+		err := json.NewDecoder(r.Body).Decode(&apiCallReq)
+		if err != nil {
+			WriteError(w, fmt.Errorf("decoding request: %w", err))
+			return
+		}
+
+		ctx, cancel := context.WithTimeout(r.Context(), ctxTimeout)
+		defer cancel()
+
+		req, err := http.NewRequestWithContext(ctx, apiCallReq.Method, apiCallReq.URL, nil)
+		if err != nil {
+			WriteError(w, fmt.Errorf("creating request: %w", err))
+			return
+		}
+
+		logger.Info(
+			"making API call",
+			slog.String("method", apiCallReq.Method),
+			slog.String("url", apiCallReq.URL),
+		)
+		resp, err := client.Do(req)
+		if err != nil {
+			WriteError(w, fmt.Errorf("sending request: %w", err))
+			return
+		}
+		defer resp.Body.Close()
+
+		respBytes, err := io.ReadAll(resp.Body)
+		if err != nil {
+			WriteError(w, fmt.Errorf("reading response body: %w", err))
+			return
+		}
+
+		hash := sha256.Sum256(respBytes)
+		logger.Info(
+			"attesting api call",
+			slog.String("hash", base64.StdEncoding.EncodeToString(hash[:])),
+		)
+		attestation, err := attester.Attest(tee.WithAttestUserData(hash[:]))
+		if err != nil {
+			WriteError(w, fmt.Errorf("attesting: %w", err))
+			return
+		}
+
+		apiCallResp := AttestAPICallResponse{
+			Attestation: attestation,
+			Response:    respBytes,
+		}
+		WriteResponse(w, apiCallResp)
+	}
+}
+
+type AttestUserDataRequest struct {
 	Nonce    []byte `json:"nonce,omitempty"`
 	UserData []byte `json:"userdata,omitempty"`
 }
-type AttestResponse struct {
+type AttestUserDataResponse struct {
 	Attestation *tee.AttestResult `json:"attestation"`
 }
 
-func MakeAttestHandler(
+func MakeAttestUserDataHandler(
 	attester tee.Attester,
 	logger *slog.Logger,
 ) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
-		req := AttestRequest{}
+		req := AttestUserDataRequest{}
 		err := json.NewDecoder(r.Body).Decode(&req)
 		if err != nil {
 			WriteError(w, fmt.Errorf("decoding request: %w", err))
@@ -47,7 +122,7 @@ func MakeAttestHandler(
 			WriteError(w, fmt.Errorf("attesting: %w", err))
 			return
 		}
-		WriteResponse(w, AttestResponse{Attestation: att})
+		WriteResponse(w, AttestUserDataResponse{Attestation: att})
 	}
 }
 

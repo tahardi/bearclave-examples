@@ -9,8 +9,6 @@ import (
 	"io"
 	"net/http"
 	"strconv"
-
-	"github.com/tahardi/bearclave/tee"
 )
 
 var (
@@ -38,24 +36,45 @@ func NewClientWithClient(
 	}
 }
 
-func (c *Client) Attest(
+func (c *Client) AttestAPICall(
 	ctx context.Context,
-	nonce []byte,
-	userData []byte,
-) (*tee.AttestResult, error) {
-	attestUserDataRequest := AttestRequest{Nonce: nonce, UserData: userData}
-	attestUserDataResponse := AttestResponse{}
+	method string,
+	url string,
+) (AttestAPICallResponse, error) {
+	attestAPICallRequest := AttestAPICallRequest{Method: method, URL: url}
+	attestAPICallResponse := AttestAPICallResponse{}
 	err := c.Do(
 		ctx,
 		"POST",
-		AttestPath,
+		AttestAPICallPath,
+		attestAPICallRequest,
+		&attestAPICallResponse,
+	)
+	if err != nil {
+		return AttestAPICallResponse{},
+			fmt.Errorf("doing attest api call request: %w", err)
+	}
+	return attestAPICallResponse, nil
+}
+
+func (c *Client) AttestUserData(
+	ctx context.Context,
+	nonce []byte,
+	userData []byte,
+) (AttestUserDataResponse, error) {
+	attestUserDataRequest := AttestUserDataRequest{Nonce: nonce, UserData: userData}
+	attestUserDataResponse := AttestUserDataResponse{}
+	err := c.Do(
+		ctx,
+		"POST",
+		AttestUserDataPath,
 		attestUserDataRequest,
 		&attestUserDataResponse,
 	)
 	if err != nil {
-		return nil, fmt.Errorf("doing attest request: %w", err)
+		return AttestUserDataResponse{}, fmt.Errorf("doing attest request: %w", err)
 	}
-	return attestUserDataResponse.Attestation, nil
+	return attestUserDataResponse, nil
 }
 
 func (c *Client) Do(

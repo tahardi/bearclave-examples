@@ -40,14 +40,14 @@ func TestClient_AttestUserData(t *testing.T) {
 
 		handler := http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 			assert.Equal(t, http.MethodPost, r.Method)
-			assert.Contains(t, r.URL.Path, networking.AttestPath)
+			assert.Contains(t, r.URL.Path, networking.AttestUserDataPath)
 
-			req := networking.AttestRequest{}
+			req := networking.AttestUserDataRequest{}
 			err := json.NewDecoder(r.Body).Decode(&req)
 			assert.NoError(t, err)
 			assert.Equal(t, data, req.UserData)
 
-			resp := networking.AttestResponse{Attestation: want}
+			resp := networking.AttestUserDataResponse{Attestation: want}
 			writeResponse(t, w, resp)
 		})
 
@@ -57,11 +57,11 @@ func TestClient_AttestUserData(t *testing.T) {
 		client := networking.NewClientWithClient(server.URL, server.Client())
 
 		// when
-		got, err := client.Attest(ctx, nonce, data)
+		got, err := client.AttestUserData(ctx, nonce, data)
 
 		// then
 		require.NoError(t, err)
-		assert.Equal(t, want, got)
+		assert.Equal(t, want, got.Attestation)
 	})
 
 	t.Run("error - doing attest request", func(t *testing.T) {
@@ -80,7 +80,7 @@ func TestClient_AttestUserData(t *testing.T) {
 		client := networking.NewClientWithClient(server.URL, server.Client())
 
 		// when
-		_, err := client.Attest(ctx, nonce, data)
+		_, err := client.AttestUserData(ctx, nonce, data)
 
 		// then
 		require.ErrorIs(t, err, networking.ErrClient)
