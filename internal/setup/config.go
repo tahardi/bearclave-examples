@@ -6,14 +6,14 @@ import (
 	"path/filepath"
 
 	"github.com/spf13/viper"
-	"github.com/tahardi/bearclave"
+	"github.com/tahardi/bearclave/tee"
 )
 
 type Config struct {
-	Platform bearclave.Platform `mapstructure:"platform"`
-	Enclave  Enclave            `mapstructure:"enclave"`
-	Nonclave Nonclave           `mapstructure:"nonclave"`
-	Proxy    Proxy              `mapstructure:"proxy"`
+	Platform tee.Platform `mapstructure:"platform"`
+	Enclave  Enclave      `mapstructure:"enclave"`
+	Nonclave Nonclave     `mapstructure:"nonclave"`
+	Proxy    Proxy        `mapstructure:"proxy"`
 }
 
 type Enclave struct {
