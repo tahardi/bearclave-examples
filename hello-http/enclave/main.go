@@ -8,13 +8,13 @@ import (
 	"os"
 	"time"
 
+	"bearclave-examples/internal/networking"
 	"bearclave-examples/internal/setup"
 
-	"github.com/tahardi/bearclave"
 	"github.com/tahardi/bearclave/tee"
 )
 
-const DefaultTimeout = 5 * time.Second
+const DefaultTimeout = 15 * time.Second
 
 var configFile string
 
@@ -36,16 +36,22 @@ func main() {
 	}
 	logger.Info("loaded config", slog.Any(configFile, config))
 
-	attester, err := bearclave.NewAttester(config.Platform)
+	attester, err := tee.NewAttester(config.Platform)
 	if err != nil {
 		logger.Error("making attester", slog.String("error", err.Error()))
 		return
 	}
 
+	client, err := tee.NewProxiedClient(config.Platform, config.Proxy.OutAddr)
+	if err != nil {
+		logger.Error("making proxied client", slog.String("error", err.Error()))
+		return
+	}
+
 	serverMux := http.NewServeMux()
 	serverMux.Handle(
-		"POST "+tee.AttestUserDataPath,
-		tee.MakeAttestUserDataHandler(attester, logger),
+		"POST "+networking.AttestAPICallPath,
+		networking.MakeAttestAPICallHandler(DefaultTimeout, attester, client, logger),
 	)
 
 	ctx, cancel := context.WithTimeout(context.Background(), DefaultTimeout)
@@ -65,6 +71,9 @@ func main() {
 	logger.Info("enclave server started", slog.String("addr", server.Addr()))
 	err = server.ListenAndServe()
 	if err != nil {
-		logger.Error("enclave server error", slog.String("error", err.Error()))
+		logger.Error(
+			"enclave server error",
+			slog.String("error", err.Error()),
+		)
 	}
 }
