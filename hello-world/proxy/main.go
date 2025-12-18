@@ -64,7 +64,7 @@ func MakeAttestHandler(
 			return
 		}
 
-		resp := networking.AttestResponse{Attestation: &attestResult}
+		resp := networking.AttestUserDataResponse{Attestation: &attestResult}
 		tee.WriteResponse(w, resp)
 		logger.Info("sent attestation to client")
 	}
@@ -90,13 +90,13 @@ func main() {
 	}
 	logger.Info("loaded config", slog.Any(configFile, config))
 
-	ctx, cancel := context.WithTimeout(context.Background(), DefaultTimeout)
-	defer cancel()
+	sockCtx, sockCanel := context.WithTimeout(context.Background(), DefaultTimeout)
+	defer sockCanel()
 	socket, err := tee.NewSocket(
-		ctx,
+		sockCtx,
 		config.Platform,
 		config.Proxy.Network,
-		config.Proxy.Addr,
+		config.Proxy.OutAddr,
 	)
 	if err != nil {
 		logger.Error("making socket", slog.String("error", err.Error()))
@@ -104,23 +104,26 @@ func main() {
 	}
 	defer socket.Close()
 
-	serverMux := http.NewServeMux()
-	serverMux.Handle(
-		"POST "+networking.AttestPath,
+	mux := http.NewServeMux()
+	mux.Handle(
+		"POST "+networking.AttestUserDataPath,
 		MakeAttestHandler(socket, config.Enclave.Addr, logger),
 	)
-
-	server := &http.Server{
-		Addr:              "0.0.0.0:8080",
-		Handler:           serverMux,
-		MaxHeaderBytes:    tee.DefaultMaxHeaderBytes,
-		ReadHeaderTimeout: tee.DefaultReadHeaderTimeout,
-		ReadTimeout:       tee.DefaultReadTimeout,
-		WriteTimeout:      tee.DefaultWriteTimeout,
-		IdleTimeout:       tee.DefaultIdleTimeout,
+	servCtx, servCancel := context.WithTimeout(context.Background(), DefaultTimeout)
+	defer servCancel()
+	server, err := tee.NewServer(
+		servCtx,
+		config.Platform,
+		config.Proxy.Network,
+		config.Proxy.InAddr,
+		mux,
+	)
+	if err != nil {
+		logger.Error("making server", slog.String("error", err.Error()))
+		return
 	}
 
-	logger.Info("proxy server started", slog.String("addr", server.Addr))
+	logger.Info("proxy server started", slog.String("addr", server.Addr()))
 	err = server.ListenAndServe()
 	if err != nil && !errors.Is(err, http.ErrServerClosed) {
 		logger.Error("proxy server error", slog.String("error", err.Error()))

@@ -68,17 +68,18 @@ func main() {
 	want := []byte("Hello, world!")
 	url := "http://" + net.JoinHostPort(host, strconv.Itoa(port))
 	client := networking.NewClient(url)
+
 	ctx, cancel := context.WithTimeout(context.Background(), DefaultTimeout)
 	defer cancel()
-	att, err := client.Attest(ctx, nonce, want)
+	got, err := client.AttestUserData(ctx, nonce, want)
 	if err != nil {
 		logger.Error("attesting userdata", slog.String("error", err.Error()))
 		return
 	}
 
 	measurement := config.Nonclave.Measurement
-	got, err := verifier.Verify(
-		att,
+	verified, err := verifier.Verify(
+		got.Attestation,
 		tee.WithVerifyMeasurement(measurement),
 		tee.WithVerifyNonce(nonce),
 	)
@@ -87,9 +88,12 @@ func main() {
 		return
 	}
 
-	if !bytes.Contains(got.UserData, want) {
+	if !bytes.Contains(verified.UserData, want) {
 		logger.Error("userdata verification failed")
 		return
 	}
-	logger.Info("verified userdata", slog.String("userdata", string(got.UserData)))
+	logger.Info(
+		"verified userdata",
+		slog.String("userdata", string(verified.UserData)),
+	)
 }

@@ -64,7 +64,7 @@ func main() {
 			return
 		}
 
-		req := networking.AttestRequest{}
+		req := networking.AttestUserDataRequest{}
 		err = json.Unmarshal(reqBytes, &req)
 		if err != nil {
 			logger.Error("unmarshaling request", slog.String("error", err.Error()))
@@ -93,7 +93,7 @@ func main() {
 		}
 
 		logger.Info("sending attestation to enclave-proxy...")
-		err = socket.Send(ctx, config.Proxy.Addr, attestBytes)
+		err = socket.Send(ctx, config.Proxy.OutAddr, attestBytes)
 		if err != nil {
 			logger.Error("sending attestation", slog.String("error", err.Error()))
 			return

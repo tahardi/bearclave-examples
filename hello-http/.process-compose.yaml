@@ -1,12 +1,15 @@
 processes:
+  proxy:
+    description: The proxy Application
+    command: go run ./proxy/main.go
+    ready_log_line: "proxy inbound server started"
   enclave:
     description: The Enclave Application
     command: go run ./enclave/main.go
     ready_log_line: "enclave server started"
-  proxy:
-    description: The proxy Application
-    command: go run ./proxy/main.go
-    ready_log_line: "proxy server started"
+    depends_on:
+      proxy:
+        condition: process_log_ready
   nonclave:
     description: The Non-Enclave Application
     command: go run ./nonclave/main.go

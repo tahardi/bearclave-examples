@@ -1,16 +1,20 @@
 package main
 
 import (
+	"context"
 	"errors"
 	"flag"
 	"log/slog"
 	"net/http"
 	"os"
+	"time"
 
 	"bearclave-examples/internal/setup"
 
 	"github.com/tahardi/bearclave/tee"
 )
+
+const DefaultTimeout = 15 * time.Second
 
 var configFile string
 
@@ -32,25 +36,55 @@ func main() {
 	}
 	logger.Info("loaded config", slog.Any(configFile, config))
 
-	proxy, err := tee.NewReverseProxy(config.Platform, config.Enclave.Addr, config.Proxy.Route)
+	inCtx, inCancel := context.WithTimeout(context.Background(), DefaultTimeout)
+	defer inCancel()
+	inboundServer, err := tee.NewReverseProxy(
+		inCtx,
+		config.Platform,
+		config.Proxy.Network,
+		config.Proxy.InAddr,
+		config.Enclave.Addr,
+		config.Enclave.Route,
+	)
 	if err != nil {
-		logger.Error("making reverse proxy", slog.String("error", err.Error()))
+		logger.Error("making inbound server", slog.String("error", err.Error()))
 		return
 	}
+	defer inboundServer.Close()
 
-	server := &http.Server{
-		Addr:    "0.0.0.0:8080",
-		Handler: proxy,
-		MaxHeaderBytes: tee.DefaultMaxHeaderBytes,
-		ReadHeaderTimeout: tee.DefaultReadHeaderTimeout,
-		ReadTimeout: tee.DefaultReadTimeout,
-		WriteTimeout: tee.DefaultWriteTimeout,
-		IdleTimeout: tee.DefaultIdleTimeout,
+	outCtx, outCancel := context.WithTimeout(context.Background(), DefaultTimeout)
+	defer outCancel()
+
+	forwardingClient := &http.Client{Timeout: DefaultTimeout}
+	mux := http.NewServeMux()
+	mux.HandleFunc(
+		tee.ForwardPath,
+		tee.MakeForwardHTTPRequestHandler(forwardingClient, logger, DefaultTimeout),
+	)
+	outboundServer, err := tee.NewServer(
+		outCtx,
+		config.Platform,
+		config.Proxy.Network,
+		config.Proxy.OutAddr,
+		mux,
+	)
+	if err != nil {
+		logger.Error("making outbound server", slog.String("error", err.Error()))
+		return
 	}
+	defer outboundServer.Close()
 
-	logger.Info("proxy server started", slog.String("addr", server.Addr))
-	err = server.ListenAndServe()
-	if err != nil && !errors.Is(err, http.ErrServerClosed) {
-		logger.Error("proxy server error", slog.String("error", err.Error()))
+	go func() {
+		logger.Info("proxy inbound server started")
+		err := inboundServer.ListenAndServe()
+		if err != nil && !errors.Is(err, http.ErrServerClosed) {
+			logger.Error("inbound server error", slog.String("error", err.Error()))
+		}
+	}()
+
+	logger.Info("proxy outbound server started")
+	err = outboundServer.ListenAndServe()
+	if err != nil {
+		logger.Error("outbound server error", slog.String("error", err.Error()))
 	}
 }
