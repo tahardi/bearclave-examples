@@ -15,8 +15,9 @@ import (
 )
 
 const (
-	AttestAPICallPath   = "/attest-api-call"
+	AttestAPICallPath  = "/attest-api-call"
 	AttestUserDataPath = "/attest-user-data"
+	DefaultTimeout     = 15 * time.Second
 )
 
 type AttestAPICallRequest struct {
