@@ -2,15 +2,15 @@
 MAKEFLAGS += --warn-undefined-variables
 SHELL := bash
 .SHELLFLAGS := -eu -o pipefail -c
-.DEFAULT_GOAL := notee-hello-world
+.DEFAULT_GOAL := notee-hello-http
 .DELETE_ON_ERROR:
 .SUFFIXES:
 
 ################################################################################
 # No TEE Demo
 ################################################################################
-.PHONY: notee-hello-world
-notee-hello-world:
+.PHONY: notee-hello-http
+notee-hello-http:
 	@make --no-print-directory notee-processes-start
 
 # Make sure your process-compose port does not conflict with
@@ -69,7 +69,7 @@ aws_nitro_instance_ip=$(shell aws ec2 describe-instances \
 	--output text)
 aws_nitro_nonclave_config=configs/nonclave/nitro.yaml
 aws_nitro_enclave_config=configs/enclave/nitro.yaml
-aws_nitro_enclave_image_tag=hello-world-enclave-nitro
+aws_nitro_enclave_image_tag=hello-http-enclave-nitro
 aws_nitro_enclave_eif_path=./enclave/bin/enclave.eif
 aws_nitro_enclave_cpu_count=2
 aws_nitro_enclave_memory_size=512
@@ -167,7 +167,7 @@ gcp_sev_instance_ip=$(shell gcloud compute instances describe \
 	--format='get(networkInterfaces[0].accessConfigs[0].natIP)')
 gcp_sev_nonclave_config=configs/nonclave/sev.yaml
 gcp_sev_enclave_config=configs/enclave/sev.yaml
-gcp_sev_enclave_image_name=hello-world-enclave-sev
+gcp_sev_enclave_image_name=hello-http-enclave-sev
 gcp_sev_enclave_image_tag=$(gcp_artifact_registry)/$(gcp_sev_enclave_image_name)
 gcp_sev_enclave_image_sha=$(shell gcloud container images list-tags \
 	$(gcp_sev_enclave_image_tag) \
@@ -224,7 +224,7 @@ gcp_tdx_instance_ip=$(shell gcloud compute instances describe \
 	--format='get(networkInterfaces[0].accessConfigs[0].natIP)')
 gcp_tdx_nonclave_config=configs/nonclave/tdx.yaml
 gcp_tdx_enclave_config=configs/enclave/tdx.yaml
-gcp_tdx_enclave_image_name=hello-world-enclave-tdx
+gcp_tdx_enclave_image_name=hello-http-enclave-tdx
 gcp_tdx_enclave_image_tag=$(gcp_artifact_registry)/$(gcp_tdx_enclave_image_name)
 gcp_tdx_enclave_image_sha=$(shell gcloud container images list-tags \
 	$(gcp_tdx_enclave_image_tag) \
