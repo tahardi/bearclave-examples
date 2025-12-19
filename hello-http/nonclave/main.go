@@ -97,11 +97,11 @@ func main() {
 	logger.Info("verified attestation")
 
 	hash := sha256.Sum256(got.Response)
-	if !bytes.Equal(hash[:], verified.UserData) {
+	if !bytes.Equal(hash[:], verified.UserData[:len(hash)]) {
 		logger.Error(
 			"userdata verification failed",
 			slog.String("want", base64.StdEncoding.EncodeToString(hash[:])),
-			slog.String("got", base64.StdEncoding.EncodeToString(verified.UserData)),
+			slog.String("got", base64.StdEncoding.EncodeToString(verified.UserData[:len(hash)])),
 		)
 		return
 	}
