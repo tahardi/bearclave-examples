@@ -15,7 +15,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        example: [hello-world, hello-http]
+        example: [hello-world, hello-http, hello-expr, hello-cel]
 
     steps:
       - name: Checkout Repo
