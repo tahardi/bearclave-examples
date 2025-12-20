@@ -73,7 +73,7 @@ func main() {
 	proxyURL := "http://" + net.JoinHostPort(host, strconv.Itoa(port))
 	client := networking.NewClient(proxyURL)
 
-	env := map[string]interface{}{
+	env := map[string]any{
 		"targetUrl": "http://httpbin.org/get",
 	}
 	expression := `httpGet(targetUrl).url == targetUrl ? "URL Match Success" : "URL Mismatch"`

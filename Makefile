@@ -36,18 +36,24 @@ test-internal-unit:
 
 .PHONY: test-examples
 test-examples: \
-	hello-world-example \
-	hello-http-example
+	hello-world \
+	hello-http \
+	hello-expr
 
-.PHONY: hello-world-example
-hello-world-example:
+.PHONY: hello-world
+hello-world:
 	@make -C ./hello-world/
 
-.PHONY: hello-http-example
-hello-http-example:
+.PHONY: hello-http
+hello-http:
 	@make -C ./hello-http/
+
+.PHONY: hello-expr
+hello-expr:
+	@make -C ./hello-expr/
 
 .PHONY: clean
 clean:
 	@make -C ./hello-world/ clean
 	@make -C ./hello-http/ clean
+	@make -C ./hello-expr/ clean

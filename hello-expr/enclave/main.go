@@ -21,26 +21,40 @@ import (
 
 const DefaultTimeout = 15 * time.Second
 
-var configFile string
+var (
+	ErrHTTPGet               = errors.New("http get")
+	ErrHTTPGetMissingURL     = fmt.Errorf("%w: missing url", ErrHTTPGet)
+	ErrHTTPGetWrongURLType   = fmt.Errorf("%w: url should be a string", ErrHTTPGet)
+	ErrHTTPGetNon200Response = fmt.Errorf("%w: non-200 response", ErrHTTPGet)
+
+	configFile string
+)
 
 func MakeHTTPGet(client *http.Client) engine.ExprEngineFn {
 	return func(params ...any) (any, error) {
 		if len(params) < 1 {
-			return nil, errors.New("url not provided")
+			return nil, ErrHTTPGetMissingURL
 		}
 
 		url, ok := params[0].(string)
 		if !ok {
-			return nil, errors.New("url should be a string")
+			return nil, ErrHTTPGetWrongURLType
 		}
 
-		resp, err := client.Get(url)
+		ctx, cancel := context.WithTimeout(context.Background(), DefaultTimeout)
+		defer cancel()
+
+		req, err := http.NewRequestWithContext(ctx, http.MethodGet, url, nil)
+		if err != nil {
+			return nil, fmt.Errorf("creating GET req: %w", err)
+		}
+
+		resp, err := client.Do(req)
 		switch {
 		case err != nil:
 			return nil, fmt.Errorf("making GET req to '%s': %w", url, err)
 		case resp.StatusCode != http.StatusOK:
-			msg := fmt.Sprintf("received non-200 response: %s", resp.Status)
-			return nil, errors.New(msg)
+			return nil, fmt.Errorf("%w: %s", ErrHTTPGetNon200Response, resp.Status)
 		}
 		defer resp.Body.Close()
 
