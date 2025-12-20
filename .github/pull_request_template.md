@@ -7,6 +7,7 @@
 If any of these checks are missing, please provide an explanation.
 
 - [ ] I have updated README files, if applicable.
-- [ ] Dependencies in `go.mod` only reference tagged or `main` branch commits
+- [ ] I have updated workflows, if applicable.
+- [ ] Dependencies in `go.mod` only reference tagged or `main` branch commits.
 - [ ] I have run `make pre-pr` and all checks have passed.
-- [ ] I have run new examples on all supported TEE platforms
+- [ ] I have run new examples on all supported TEE platforms, if applicable.
