@@ -10,7 +10,7 @@ import (
 type ExprEngineFn func(params ...any) (any, error)
 
 type ExprEngine struct {
-	whitelist map[string]ExprEngineFn
+	baseOptions []expr.Option
 }
 
 func NewExprEngine() (*ExprEngine, error) {
@@ -20,7 +20,11 @@ func NewExprEngine() (*ExprEngine, error) {
 func NewExprEngineWithWhitelist(
 	whitelist map[string]ExprEngineFn,
 ) (*ExprEngine, error) {
-	return &ExprEngine{whitelist: whitelist}, nil
+	baseOptions := make([]expr.Option, 0, len(whitelist))
+	for name, fn := range whitelist {
+		baseOptions = append(baseOptions, expr.Function(name, fn))
+	}
+	return &ExprEngine{baseOptions: baseOptions}, nil
 }
 
 func (e *ExprEngine) Execute(
@@ -28,12 +32,7 @@ func (e *ExprEngine) Execute(
 	expression string,
 	env map[string]any,
 ) (any, error) {
-	whitelistedFns := []expr.Option{expr.Env(env)}
-	for name, fn := range e.whitelist {
-		whitelistedFns = append(whitelistedFns, expr.Function(name, fn))
-	}
-
-	program, err := expr.Compile(expression, whitelistedFns...)
+	program, err := expr.Compile(expression, append(e.baseOptions, expr.Env(env))...)
 	if err != nil {
 		return nil, fmt.Errorf("compile error: %w", err)
 	}

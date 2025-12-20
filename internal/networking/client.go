@@ -57,7 +57,28 @@ func (c *Client) AttestAPICall(
 	return attestAPICallResponse, nil
 }
 
-func (c *Client) AttestExprCall(
+func (c *Client) AttestCEL(
+	ctx context.Context,
+	expression string,
+	env map[string]any,
+) (AttestCELResponse, error) {
+	attestCELRequest := AttestCELRequest{Expression: expression, Env: env}
+	attestCELResponse := AttestCELResponse{}
+	err := c.Do(
+		ctx,
+		"POST",
+		AttestCELPath,
+		attestCELRequest,
+		&attestCELResponse,
+	)
+	if err != nil {
+		return AttestCELResponse{},
+			fmt.Errorf("doing attest cel request: %w", err)
+	}
+	return attestCELResponse, nil
+}
+
+func (c *Client) AttestExpr(
 	ctx context.Context,
 	expression string,
 	env map[string]any,

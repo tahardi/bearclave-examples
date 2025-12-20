@@ -119,7 +119,7 @@ func TestClient_AttestExpr(t *testing.T) {
 		client := networking.NewClientWithClient(server.URL, server.Client())
 
 		// when
-		got, err := client.AttestExprCall(ctx, expression, env)
+		got, err := client.AttestExpr(ctx, expression, env)
 
 		// then
 		require.NoError(t, err)
@@ -144,7 +144,7 @@ func TestClient_AttestExpr(t *testing.T) {
 		client := networking.NewClientWithClient(server.URL, server.Client())
 
 		// when
-		_, err := client.AttestExprCall(ctx, expression, env)
+		_, err := client.AttestExpr(ctx, expression, env)
 
 		// then
 		require.ErrorIs(t, err, networking.ErrClient)

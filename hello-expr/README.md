@@ -9,17 +9,18 @@ secure TEE environment. Try it out yourself! Run the example locally with:
 make
 
 # You should see output similar to:
-[proxy  ] time=2025-12-20T06:44:01.104-05:00 level=INFO msg="loaded config" configs/enclave/notee.yaml="&{Platform:notee Enclave:{Network:tcp Addr:http://127.0.0.1:8083 Route:app/v1} Nonclave:{Measurement: Route:} Proxy:{Network:tcp InAddr:http://0.0.0.0:8080 OutAddr:http://127.0.0.1:8082}}"
-[proxy  ] time=2025-12-20T06:44:01.104-05:00 level=INFO msg="proxy outbound server started"
-[proxy  ] time=2025-12-20T06:44:01.104-05:00 level=INFO msg="proxy inbound server started"
-[enclave        ] time=2025-12-20T06:44:01.180-05:00 level=INFO msg="loaded config" configs/enclave/notee.yaml="&{Platform:notee Enclave:{Network:tcp Addr:http://127.0.0.1:8083 Route:app/v1} Nonclave:{Measurement: Route:} Proxy:{Network:tcp InAddr:http://0.0.0.0:8080 OutAddr:http://127.0.0.1:8082}}"
-[enclave        ] time=2025-12-20T06:44:01.180-05:00 level=INFO msg="enclave server started" addr=127.0.0.1:8083
-[nonclave       ] time=2025-12-20T06:44:01.589-05:00 level=INFO msg="loaded config" configs/nonclave/notee.yaml="&{Platform:notee Enclave:{Network: Addr: Route:} Nonclave:{Measurement:Not a TEE platform. Code measurements are not real. Route:app/v1} Proxy:{Network: InAddr: OutAddr:}}"
-[proxy  ] time=2025-12-20T06:44:01.590-05:00 level=INFO msg="forwarding request" url=http://httpbin.org/get
-[enclave        ] time=2025-12-20T06:44:01.710-05:00 level=INFO msg="attesting expr" hash="NTP1x0ckuRyhi9bs7EWP/a/bQ5nF85Av1FJUhCy4LIs="
-[nonclave       ] time=2025-12-20T06:44:01.711-05:00 level=INFO msg="verified attestation"
-[nonclave       ] time=2025-12-20T06:44:01.711-05:00 level=INFO msg="verified expression" expression="httpGet(targetUrl).url == targetUrl ? \"URL Match Success\" : \"URL Mismatch\"" env=map[targetUrl:http://httpbin.org/get]
-[nonclave       ] time=2025-12-20T06:44:01.711-05:00 level=INFO msg="expression result:" value="URL Match Success"
+[proxy  ] time=2025-12-20T14:46:03.169-05:00 level=INFO msg="loaded config" configs/enclave/notee.yaml="&{Platform:notee Enclave:{Network:tcp Addr:http://127.0.0.1:8083 Route:app/v1} Nonclave:{Measurement: Route:} Proxy:{Network:tcp InAddr:http://0.0.0.0:8080 OutAddr:http://127.0.0.1:8082}}"
+[proxy  ] time=2025-12-20T14:46:03.170-05:00 level=INFO msg="proxy outbound server started"
+[proxy  ] time=2025-12-20T14:46:03.170-05:00 level=INFO msg="proxy inbound server started"
+[enclave        ] time=2025-12-20T14:46:03.719-05:00 level=INFO msg="loaded config" configs/enclave/notee.yaml="&{Platform:notee Enclave:{Network:tcp Addr:http://127.0.0.1:8083 Route:app/v1} Nonclave:{Measurement: Route:} Proxy:{Network:tcp InAddr:http://0.0.0.0:8080 OutAddr:http://127.0.0.1:8082}}"
+[enclave        ] time=2025-12-20T14:46:03.719-05:00 level=INFO msg="enclave server started" addr=127.0.0.1:8083
+[nonclave       ] time=2025-12-20T14:46:04.220-05:00 level=INFO msg="loaded config" configs/nonclave/notee.yaml="&{Platform:notee Enclave:{Network: Addr: Route:} Nonclave:{Measurement:Not a TEE platform. Code measurements are not real. Route:app/v1} Proxy:{Network: InAddr: OutAddr:}}"
+[enclave        ] time=2025-12-20T14:46:04.221-05:00 level=INFO msg="executing expr" expression="httpGet(targetUrl).url == targetUrl ? \"URL Match Success\" : \"URL Mismatch\""
+[proxy  ] time=2025-12-20T14:46:04.221-05:00 level=INFO msg="forwarding request" url=http://httpbin.org/get
+[enclave        ] time=2025-12-20T14:46:04.496-05:00 level=INFO msg="attesting expr" hash="NTP1x0ckuRyhi9bs7EWP/a/bQ5nF85Av1FJUhCy4LIs="
+[nonclave       ] time=2025-12-20T14:46:04.497-05:00 level=INFO msg="verified attestation"
+[nonclave       ] time=2025-12-20T14:46:04.497-05:00 level=INFO msg="verified expression" expression="httpGet(targetUrl).url == targetUrl ? \"URL Match Success\" : \"URL Mismatch\"" env=map[targetUrl:http://httpbin.org/get]
+[nonclave       ] time=2025-12-20T14:46:04.497-05:00 level=INFO msg="expression result:" value="URL Match Success"
 ```
 
 ## How it Works
@@ -173,17 +174,23 @@ though. Thus, we wrap the call with a context so that the Enclave does not
 block forever.
 ```go
 // internal/engine/expr.go
-func (e *ExprEngine) Execute(
-	ctx context.Context,
-	expression string,
-	env map[string]any,
-) (any, error) {
-	whitelistedFns := []expr.Option{expr.Env(env)}
-	for name, fn := range e.whitelist {
-		whitelistedFns = append(whitelistedFns, expr.Function(name, fn))
-	}
+func NewExprEngineWithWhitelist(
+    whitelist map[string]ExprEngineFn,
+) (*ExprEngine, error) {
+    baseOptions := make([]expr.Option, 0, len(whitelist))
+    for name, fn := range whitelist {   
+		baseOptions = append(baseOptions, expr.Function(name, fn))
+    }
+    return &ExprEngine{baseOptions: baseOptions}, nil
+}
 
-	program, err := expr.Compile(expression, whitelistedFns...)
+func (e *ExprEngine) Execute(
+    ctx context.Context,
+    expression string,
+    env map[string]any,
+) (any, error) {
+    options := append(e.baseOptions, expr.Env(env))
+    program, err := expr.Compile(expression, options...)
 	if err != nil {
 		return nil, fmt.Errorf("compile error: %w", err)
 	}

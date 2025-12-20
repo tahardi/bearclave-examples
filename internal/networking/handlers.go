@@ -18,6 +18,7 @@ import (
 
 const (
 	AttestAPICallPath  = "/attest-api-call"
+	AttestCELPath      = "/attest-cel"
 	AttestExprPath     = "/attest-expr"
 	AttestUserDataPath = "/attest-user-data"
 	DefaultTimeout     = 15 * time.Second
@@ -93,6 +94,80 @@ func MakeAttestAPICallHandler(
 	}
 }
 
+type AttestCELRequest struct {
+	Expression string         `json:"expression"`
+	Env        map[string]any `json:"env"`
+}
+
+type AttestedCEL struct {
+	Expression string `json:"expression"`
+	Env        any    `json:"env"`
+	Output     any    `json:"output"`
+}
+
+type AttestCELResponse struct {
+	Attestation *tee.AttestResult `json:"attestation"`
+	Result      AttestedCEL       `json:"result"`
+}
+
+func MakeAttestCELHandler(
+	celEngine *engine.CELEngine,
+	celTimeout time.Duration,
+	attester tee.Attester,
+	logger *slog.Logger,
+) http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		exprReq := AttestCELRequest{}
+		err := json.NewDecoder(r.Body).Decode(&exprReq)
+		if err != nil {
+			logger.Error("decoding request", slog.String("error", err.Error()))
+			WriteError(w, fmt.Errorf("decoding request: %w", err))
+			return
+		}
+
+		ctx, cancel := context.WithTimeout(r.Context(), celTimeout)
+		defer cancel()
+
+		logger.Info("executing cel", slog.String("expression", exprReq.Expression))
+		output, err := celEngine.Execute(ctx, exprReq.Expression, exprReq.Env)
+		if err != nil {
+			logger.Error("executing expression", slog.String("error", err.Error()))
+			WriteError(w, fmt.Errorf("executing expression: %w", err))
+			return
+		}
+
+		result := AttestedCEL{
+			Expression: exprReq.Expression,
+			Env:        exprReq.Env,
+			Output:     output,
+		}
+		resBytes, err := json.Marshal(result)
+		if err != nil {
+			logger.Error("marshaling result", slog.String("error", err.Error()))
+			WriteError(w, fmt.Errorf("marshaling result: %w", err))
+			return
+		}
+
+		hash := sha256.Sum256(resBytes)
+		logger.Info(
+			"attesting cel",
+			slog.String("hash", base64.StdEncoding.EncodeToString(hash[:])),
+		)
+		attestation, err := attester.Attest(tee.WithAttestUserData(hash[:]))
+		if err != nil {
+			logger.Error("attesting", slog.String("error", err.Error()))
+			WriteError(w, fmt.Errorf("attesting: %w", err))
+			return
+		}
+
+		apiCallResp := AttestCELResponse{
+			Attestation: attestation,
+			Result:      result,
+		}
+		WriteResponse(w, apiCallResp)
+	}
+}
+
 type AttestExprRequest struct {
 	Expression string         `json:"expression"`
 	Env        map[string]any `json:"env"`
@@ -127,6 +202,7 @@ func MakeAttestExprHandler(
 		ctx, cancel := context.WithTimeout(r.Context(), exprTimeout)
 		defer cancel()
 
+		logger.Info("executing expr", slog.String("expression", exprReq.Expression))
 		output, err := exprEngine.Execute(ctx, exprReq.Expression, exprReq.Env)
 		if err != nil {
 			logger.Error("executing expression", slog.String("error", err.Error()))

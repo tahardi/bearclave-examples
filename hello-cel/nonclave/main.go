@@ -77,7 +77,7 @@ func main() {
 		"targetUrl": "http://httpbin.org/get",
 	}
 	expression := `httpGet(targetUrl).url == targetUrl ? "URL Match Success" : "URL Mismatch"`
-	got, err := client.AttestExpr(ctx, expression, env)
+	got, err := client.AttestCEL(ctx, expression, env)
 	if err != nil {
 		logger.Error("attesting expr", slog.String("error", err.Error()))
 		return
@@ -109,9 +109,8 @@ func main() {
 	}
 
 	logger.Info(
-		"verified expression",
-		slog.String("expression", got.Result.Expression),
-		slog.Any("env", got.Result.Env),
+		"verified cel",
+		slog.String("hash", base64.StdEncoding.EncodeToString(hash[:])),
 	)
 
 	resultString, ok := got.Result.Output.(string)
