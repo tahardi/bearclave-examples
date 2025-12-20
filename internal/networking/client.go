@@ -93,7 +93,7 @@ func (c *Client) AttestUserData(
 		&attestUserDataResponse,
 	)
 	if err != nil {
-		return AttestUserDataResponse{}, fmt.Errorf("doing attest request: %w", err)
+		return AttestUserDataResponse{}, fmt.Errorf("doing attest user data request: %w", err)
 	}
 	return attestUserDataResponse, nil
 }
