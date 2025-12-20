@@ -32,7 +32,7 @@ var (
 	errHTTPGetNon200Response = fmt.Errorf("%w: non-200 response", errHTTPGet)
 )
 
-func makeHTTPGet(client *http.Client) engine.ExprEngineFn {
+func makeHTTPGet(client *http.Client) func(params ...any) (any, error) {
 	return func(params ...any) (any, error) {
 		if len(params) < 1 {
 			return nil, errHTTPGetMissingURL
@@ -220,6 +220,189 @@ func TestMakeAttestAPICallHandler(t *testing.T) {
 		// then
 		assert.Equal(t, http.StatusInternalServerError, recorder.Code)
 		assert.Contains(t, logBuffer.String(), base64.StdEncoding.EncodeToString(wantHash[:]))
+		assert.Contains(t, recorder.Body.String(), "attesting")
+	})
+}
+
+func TestMakeAttestCELHandler(t *testing.T) {
+	t.Run("happy path", func(t *testing.T) {
+		// given
+		want := map[string]string{"status": "ok"}
+		wantBytes, err := json.Marshal(want)
+		require.NoError(t, err)
+
+		backend := httptest.NewServer(http.HandlerFunc(
+			func(w http.ResponseWriter, r *http.Request) {
+				assert.Equal(t, "GET", r.Method)
+				w.Header().Set("Content-Type", "application/json")
+				w.WriteHeader(http.StatusOK)
+				_, _ = w.Write(wantBytes)
+			}),
+		)
+		defer backend.Close()
+
+		attester, err := tee.NewAttester(tee.NoTEE)
+		require.NoError(t, err)
+
+		var logBuffer bytes.Buffer
+		logger := slog.New(slog.NewTextHandler(&logBuffer, nil))
+
+		whitelist := map[string]engine.CELEngineFn{
+			"httpGet": makeHTTPGet(backend.Client()),
+		}
+		celEngine, err := engine.NewCELEngineWithWhitelist(whitelist)
+		require.NoError(t, err)
+
+		expression := `httpGet(targetUrl)`
+		env := map[string]any{
+			"targetUrl": backend.URL,
+		}
+		recorder := httptest.NewRecorder()
+		body := networking.AttestCELRequest{Expression: expression, Env: env}
+		req := makeRequest(t, "POST", networking.AttestCELPath, body)
+
+		handler := networking.MakeAttestCELHandler(
+			celEngine,
+			defaultTimeout,
+			attester,
+			logger,
+		)
+
+		// when
+		handler.ServeHTTP(recorder, req)
+
+		// then
+		assert.Equal(t, http.StatusOK, recorder.Code)
+
+		response := networking.AttestCELResponse{}
+		err = json.NewDecoder(recorder.Body).Decode(&response)
+		require.NoError(t, err)
+
+		verifier, err := tee.NewVerifier(tee.NoTEE)
+		require.NoError(t, err)
+
+		verified, err := verifier.Verify(response.Attestation)
+		require.NoError(t, err)
+
+		resBytes, err := json.Marshal(response.Result)
+		require.NoError(t, err)
+
+		hash := sha256.Sum256(resBytes)
+		assert.Equal(t, verified.UserData[:len(hash)], hash[:])
+	})
+
+	t.Run("error - decoding request", func(t *testing.T) {
+		// given
+		attester := mocks.NewAttester(t)
+
+		var logBuffer bytes.Buffer
+		logger := slog.New(slog.NewTextHandler(&logBuffer, nil))
+
+		recorder := httptest.NewRecorder()
+		body := []byte("invalid json")
+		req := makeRequest(t, "POST", networking.AttestCELPath, body)
+
+		celEngine, err := engine.NewCELEngine()
+		require.NoError(t, err)
+
+		handler := networking.MakeAttestCELHandler(
+			celEngine,
+			defaultTimeout,
+			attester,
+			logger,
+		)
+
+		// when
+		handler.ServeHTTP(recorder, req)
+
+		// then
+		assert.Equal(t, http.StatusInternalServerError, recorder.Code)
+		assert.Contains(t, recorder.Body.String(), "decoding request")
+	})
+
+	t.Run("error - evaluating expr", func(t *testing.T) {
+		// given
+		attester := mocks.NewAttester(t)
+
+		var logBuffer bytes.Buffer
+		logger := slog.New(slog.NewTextHandler(&logBuffer, nil))
+
+		expression := `httpGet(targetUrl)`
+		env := map[string]any{
+			"targetUrl": "http://thiswontbecalled.org",
+		}
+		recorder := httptest.NewRecorder()
+		body := networking.AttestCELRequest{Expression: expression, Env: env}
+		req := makeRequest(t, "POST", networking.AttestCELPath, body)
+
+		celEngine, err := engine.NewCELEngine()
+		require.NoError(t, err)
+
+		handler := networking.MakeAttestCELHandler(
+			celEngine,
+			defaultTimeout,
+			attester,
+			logger,
+		)
+
+		// when
+		handler.ServeHTTP(recorder, req)
+
+		// then
+		assert.Equal(t, http.StatusInternalServerError, recorder.Code)
+		assert.Contains(t, recorder.Body.String(), "executing expression")
+	})
+
+	t.Run("error - attesting expr", func(t *testing.T) {
+		// given
+		want := map[string]string{"status": "ok"}
+		wantBytes, err := json.Marshal(want)
+		require.NoError(t, err)
+
+		backend := httptest.NewServer(http.HandlerFunc(
+			func(w http.ResponseWriter, r *http.Request) {
+				assert.Equal(t, "GET", r.Method)
+				w.Header().Set("Content-Type", "application/json")
+				w.WriteHeader(http.StatusOK)
+				_, _ = w.Write(wantBytes)
+			}),
+		)
+		defer backend.Close()
+
+		attester := mocks.NewAttester(t)
+		attester.
+			On("Attest", mock.AnythingOfType("[]attestation.AttestOption")).
+			Return(nil, assert.AnError).Once()
+
+		var logBuffer bytes.Buffer
+		logger := slog.New(slog.NewTextHandler(&logBuffer, nil))
+
+		whitelist := map[string]engine.CELEngineFn{
+			"httpGet": makeHTTPGet(backend.Client()),
+		}
+		celEngine, err := engine.NewCELEngineWithWhitelist(whitelist)
+		require.NoError(t, err)
+
+		expression := `httpGet(targetUrl)`
+		env := map[string]any{
+			"targetUrl": backend.URL,
+		}
+		recorder := httptest.NewRecorder()
+		body := networking.AttestCELRequest{Expression: expression, Env: env}
+		req := makeRequest(t, "POST", networking.AttestCELPath, body)
+
+		handler := networking.MakeAttestCELHandler(
+			celEngine,
+			defaultTimeout,
+			attester,
+			logger,
+		)
+
+		// when
+		handler.ServeHTTP(recorder, req)
+
+		// then
+		assert.Equal(t, http.StatusInternalServerError, recorder.Code)
 		assert.Contains(t, recorder.Body.String(), "attesting")
 	})
 }

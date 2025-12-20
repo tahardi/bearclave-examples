@@ -38,7 +38,8 @@ test-internal-unit:
 test-examples: \
 	hello-world \
 	hello-http \
-	hello-expr
+	hello-expr \
+	hello-cel
 
 .PHONY: hello-world
 hello-world:
@@ -52,8 +53,13 @@ hello-http:
 hello-expr:
 	@make -C ./hello-expr/
 
+.PHONY: hello-cel
+hello-cel:
+	@make -C ./hello-cel/
+
 .PHONY: clean
 clean:
 	@make -C ./hello-world/ clean
 	@make -C ./hello-http/ clean
 	@make -C ./hello-expr/ clean
+	@make -C ./hello-cel/ clean
