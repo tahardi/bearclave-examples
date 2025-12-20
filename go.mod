@@ -3,6 +3,7 @@ module bearclave-examples
 go 1.25.5
 
 require (
+	github.com/expr-lang/expr v1.17.7
 	github.com/spf13/viper v1.21.0
 	github.com/stretchr/testify v1.11.1
 	github.com/tahardi/bearclave v0.0.0-20251219102451-1cc6c048c27e
