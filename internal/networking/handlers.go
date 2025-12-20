@@ -129,8 +129,8 @@ func MakeAttestExprHandler(
 
 		output, err := exprEngine.Execute(ctx, exprReq.Expression, exprReq.Env)
 		if err != nil {
-			logger.Error("evaluating expression", slog.String("error", err.Error()))
-			WriteError(w, fmt.Errorf("evaluating expression: %w", err))
+			logger.Error("executing expression", slog.String("error", err.Error()))
+			WriteError(w, fmt.Errorf("executing expression: %w", err))
 			return
 		}
 

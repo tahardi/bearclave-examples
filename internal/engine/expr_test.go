@@ -2,6 +2,7 @@ package engine_test
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"testing"
 
@@ -14,12 +15,14 @@ import (
 func TestExprEngine_Execute(t *testing.T) {
 	sprintf := func(params ...any) (any, error) {
 		if len(params) < 2 {
-			return nil, fmt.Errorf("sprintf requires at least two arguments")
+			// nolint:err113
+			return nil, errors.New("sprintf requires at least two arguments")
 		}
 
 		format, ok := params[0].(string)
 		if !ok {
-			return nil, fmt.Errorf("first argument must be a string")
+			// nolint:err113
+			return nil, errors.New("first argument must be a string")
 		}
 		return fmt.Sprintf(format, params[1:]...), nil
 	}
