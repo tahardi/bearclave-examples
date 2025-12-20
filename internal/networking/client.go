@@ -57,6 +57,27 @@ func (c *Client) AttestAPICall(
 	return attestAPICallResponse, nil
 }
 
+func (c *Client) AttestExprCall(
+	ctx context.Context,
+	expression string,
+	env map[string]any,
+) (AttestExprResponse, error) {
+	attestExprRequest := AttestExprRequest{Expression: expression, Env: env}
+	attestExprResponse := AttestExprResponse{}
+	err := c.Do(
+		ctx,
+		"POST",
+		AttestExprPath,
+		attestExprRequest,
+		&attestExprResponse,
+	)
+	if err != nil {
+		return AttestExprResponse{},
+			fmt.Errorf("doing attest expr request: %w", err)
+	}
+	return attestExprResponse, nil
+}
+
 func (c *Client) AttestUserData(
 	ctx context.Context,
 	nonce []byte,
@@ -72,7 +93,7 @@ func (c *Client) AttestUserData(
 		&attestUserDataResponse,
 	)
 	if err != nil {
-		return AttestUserDataResponse{}, fmt.Errorf("doing attest request: %w", err)
+		return AttestUserDataResponse{}, fmt.Errorf("doing attest user data request: %w", err)
 	}
 	return attestUserDataResponse, nil
 }

@@ -11,11 +11,14 @@ import (
 	"net/http"
 	"time"
 
+	"bearclave-examples/internal/engine"
+
 	"github.com/tahardi/bearclave/tee"
 )
 
 const (
 	AttestAPICallPath  = "/attest-api-call"
+	AttestExprPath     = "/attest-expr"
 	AttestUserDataPath = "/attest-user-data"
 	DefaultTimeout     = 15 * time.Second
 )
@@ -85,6 +88,79 @@ func MakeAttestAPICallHandler(
 		apiCallResp := AttestAPICallResponse{
 			Attestation: attestation,
 			Response:    respBytes,
+		}
+		WriteResponse(w, apiCallResp)
+	}
+}
+
+type AttestExprRequest struct {
+	Expression string         `json:"expression"`
+	Env        map[string]any `json:"env"`
+}
+
+type AttestedExpr struct {
+	Expression string `json:"expression"`
+	Env        any    `json:"env"`
+	Output     any    `json:"output"`
+}
+
+type AttestExprResponse struct {
+	Attestation *tee.AttestResult `json:"attestation"`
+	Result      AttestedExpr      `json:"result"`
+}
+
+func MakeAttestExprHandler(
+	exprEngine *engine.ExprEngine,
+	exprTimeout time.Duration,
+	attester tee.Attester,
+	logger *slog.Logger,
+) http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		exprReq := AttestExprRequest{}
+		err := json.NewDecoder(r.Body).Decode(&exprReq)
+		if err != nil {
+			logger.Error("decoding request", slog.String("error", err.Error()))
+			WriteError(w, fmt.Errorf("decoding request: %w", err))
+			return
+		}
+
+		ctx, cancel := context.WithTimeout(r.Context(), exprTimeout)
+		defer cancel()
+
+		output, err := exprEngine.Execute(ctx, exprReq.Expression, exprReq.Env)
+		if err != nil {
+			logger.Error("executing expression", slog.String("error", err.Error()))
+			WriteError(w, fmt.Errorf("executing expression: %w", err))
+			return
+		}
+
+		result := AttestedExpr{
+			Expression: exprReq.Expression,
+			Env:        exprReq.Env,
+			Output:     output,
+		}
+		resBytes, err := json.Marshal(result)
+		if err != nil {
+			logger.Error("marshaling result", slog.String("error", err.Error()))
+			WriteError(w, fmt.Errorf("marshaling result: %w", err))
+			return
+		}
+
+		hash := sha256.Sum256(resBytes)
+		logger.Info(
+			"attesting expr",
+			slog.String("hash", base64.StdEncoding.EncodeToString(hash[:])),
+		)
+		attestation, err := attester.Attest(tee.WithAttestUserData(hash[:]))
+		if err != nil {
+			logger.Error("attesting", slog.String("error", err.Error()))
+			WriteError(w, fmt.Errorf("attesting: %w", err))
+			return
+		}
+
+		apiCallResp := AttestExprResponse{
+			Attestation: attestation,
+			Result:      result,
 		}
 		WriteResponse(w, apiCallResp)
 	}

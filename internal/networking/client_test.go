@@ -30,6 +30,128 @@ func writeResponse(t *testing.T, w http.ResponseWriter, out any) {
 	require.NoError(t, err)
 }
 
+func TestClient_AttestAPICall(t *testing.T) {
+	t.Run("happy path", func(t *testing.T) {
+		// given
+		ctx := context.Background()
+		method := http.MethodGet
+		url := "http://httpbin.org/get"
+		want := &tee.AttestResult{Report: []byte("attestation")}
+
+		handler := http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+			assert.Equal(t, http.MethodPost, r.Method)
+			assert.Contains(t, r.URL.Path, networking.AttestAPICallPath)
+
+			req := networking.AttestAPICallRequest{}
+			err := json.NewDecoder(r.Body).Decode(&req)
+			assert.NoError(t, err)
+			assert.Equal(t, method, req.Method)
+			assert.Equal(t, url, req.URL)
+
+			resp := networking.AttestAPICallResponse{Attestation: want}
+			writeResponse(t, w, resp)
+		})
+
+		server := httptest.NewServer(handler)
+		defer server.Close()
+
+		client := networking.NewClientWithClient(server.URL, server.Client())
+
+		// when
+		got, err := client.AttestAPICall(ctx, method, url)
+
+		// then
+		require.NoError(t, err)
+		assert.Equal(t, want, got.Attestation)
+	})
+
+	t.Run("error - doing attest api call request", func(t *testing.T) {
+		// given
+		ctx := context.Background()
+		method := http.MethodGet
+		url := "http://httpbin.org/get"
+
+		handler := http.HandlerFunc(func(w http.ResponseWriter, _ *http.Request) {
+			writeError(w, assert.AnError)
+		})
+
+		server := httptest.NewServer(handler)
+		defer server.Close()
+
+		client := networking.NewClientWithClient(server.URL, server.Client())
+
+		// when
+		_, err := client.AttestAPICall(ctx, method, url)
+
+		// then
+		require.ErrorIs(t, err, networking.ErrClient)
+		assert.ErrorContains(t, err, "doing attest api call request")
+	})
+}
+
+func TestClient_AttestExpr(t *testing.T) {
+	t.Run("happy path", func(t *testing.T) {
+		// given
+		ctx := context.Background()
+		env := map[string]any{
+			"targetUrl": "http://httpbin.org/get",
+		}
+		expression := `httpGet(targetUrl).url == targetUrl ? "URL Match Success" : "URL Mismatch"`
+		want := &tee.AttestResult{Report: []byte("attestation")}
+
+		handler := http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+			assert.Equal(t, http.MethodPost, r.Method)
+			assert.Contains(t, r.URL.Path, networking.AttestExprPath)
+
+			req := networking.AttestExprRequest{}
+			err := json.NewDecoder(r.Body).Decode(&req)
+			assert.NoError(t, err)
+			assert.Equal(t, expression, req.Expression)
+			assert.Equal(t, env, req.Env)
+
+			resp := networking.AttestExprResponse{Attestation: want}
+			writeResponse(t, w, resp)
+		})
+
+		server := httptest.NewServer(handler)
+		defer server.Close()
+
+		client := networking.NewClientWithClient(server.URL, server.Client())
+
+		// when
+		got, err := client.AttestExprCall(ctx, expression, env)
+
+		// then
+		require.NoError(t, err)
+		assert.Equal(t, want, got.Attestation)
+	})
+
+	t.Run("error - doing attest request", func(t *testing.T) {
+		// given
+		ctx := context.Background()
+		env := map[string]any{
+			"targetUrl": "http://httpbin.org/get",
+		}
+		expression := `httpGet(targetUrl).url == targetUrl ? "URL Match Success" : "URL Mismatch"`
+
+		handler := http.HandlerFunc(func(w http.ResponseWriter, _ *http.Request) {
+			writeError(w, assert.AnError)
+		})
+
+		server := httptest.NewServer(handler)
+		defer server.Close()
+
+		client := networking.NewClientWithClient(server.URL, server.Client())
+
+		// when
+		_, err := client.AttestExprCall(ctx, expression, env)
+
+		// then
+		require.ErrorIs(t, err, networking.ErrClient)
+		assert.ErrorContains(t, err, "doing attest expr request")
+	})
+}
+
 func TestClient_AttestUserData(t *testing.T) {
 	t.Run("happy path", func(t *testing.T) {
 		// given
@@ -64,7 +186,7 @@ func TestClient_AttestUserData(t *testing.T) {
 		assert.Equal(t, want, got.Attestation)
 	})
 
-	t.Run("error - doing attest request", func(t *testing.T) {
+	t.Run("error - doing attest user data request", func(t *testing.T) {
 		// given
 		ctx := context.Background()
 		data := []byte("data")
@@ -84,7 +206,7 @@ func TestClient_AttestUserData(t *testing.T) {
 
 		// then
 		require.ErrorIs(t, err, networking.ErrClient)
-		assert.ErrorContains(t, err, "doing attest request")
+		assert.ErrorContains(t, err, "doing attest user data request")
 	})
 }
 
