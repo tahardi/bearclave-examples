@@ -6,7 +6,7 @@ import (
 	"fmt"
 	"testing"
 
-	"bearclave-examples/internal/engine"
+	"github.com/tahardi/bearclave-examples/internal/engine"
 
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"

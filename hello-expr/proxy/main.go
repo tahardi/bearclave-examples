@@ -9,7 +9,7 @@ import (
 	"os"
 	"time"
 
-	"bearclave-examples/internal/setup"
+	"github.com/tahardi/bearclave-examples/internal/setup"
 
 	"github.com/tahardi/bearclave/tee"
 )

@@ -12,9 +12,9 @@ import (
 	"os"
 	"time"
 
-	"bearclave-examples/internal/engine"
-	"bearclave-examples/internal/networking"
-	"bearclave-examples/internal/setup"
+	"github.com/tahardi/bearclave-examples/internal/engine"
+	"github.com/tahardi/bearclave-examples/internal/networking"
+	"github.com/tahardi/bearclave-examples/internal/setup"
 
 	"github.com/tahardi/bearclave/tee"
 )

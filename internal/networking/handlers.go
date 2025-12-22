@@ -10,7 +10,7 @@ import (
 	"net/http"
 	"time"
 
-	"bearclave-examples/internal/engine"
+	"github.com/tahardi/bearclave-examples/internal/engine"
 
 	"github.com/tahardi/bearclave/tee"
 )

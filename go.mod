@@ -1,4 +1,4 @@
-module bearclave-examples
+module github.com/tahardi/bearclave-examples
 
 go 1.25.5
 
