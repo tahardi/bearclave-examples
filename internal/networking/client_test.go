@@ -7,7 +7,7 @@ import (
 	"net/http/httptest"
 	"testing"
 
-	"bearclave-examples/internal/networking"
+	"github.com/tahardi/bearclave-examples/internal/networking"
 
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
