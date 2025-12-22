@@ -1,10 +1,7 @@
 package main
 
 import (
-	"bytes"
 	"context"
-	"crypto/sha256"
-	"encoding/base64"
 	"encoding/json"
 	"flag"
 	"log/slog"
@@ -81,9 +78,9 @@ func main() {
 
 	proxyURL := "http://" + net.JoinHostPort(host, strconv.Itoa(port))
 	client := networking.NewClient(proxyURL)
-	got, err := client.AttestAPICall(ctx, TargetMethod, TargetURL)
+	got, err := client.AttestHTTPCall(ctx, TargetMethod, TargetURL)
 	if err != nil {
-		logger.Error("attesting api call", slog.String("error", err.Error()))
+		logger.Error("attesting http call", slog.String("error", err.Error()))
 		return
 	}
 
@@ -96,25 +93,15 @@ func main() {
 	}
 	logger.Info("verified attestation")
 
-	hash := sha256.Sum256(got.Response)
-	if !bytes.Equal(hash[:], verified.UserData[:len(hash)]) {
-		logger.Error(
-			"userdata verification failed",
-			slog.String("want", base64.StdEncoding.EncodeToString(hash[:])),
-			slog.String("got", base64.StdEncoding.EncodeToString(verified.UserData[:len(hash)])),
-		)
-		return
-	}
-
 	httpBinResp := HTTPBinGetResponse{}
-	err = json.Unmarshal(got.Response, &httpBinResp)
+	err = json.Unmarshal(verified.UserData, &httpBinResp)
 	if err != nil {
 		logger.Error("unmarshaling httpbin response", slog.String("error", err.Error()))
 		return
 	}
 
 	logger.Info(
-		"verified api call response",
+		"verified http call response",
 		slog.String("url", httpBinResp.URL),
 		slog.Any("response", httpBinResp),
 	)

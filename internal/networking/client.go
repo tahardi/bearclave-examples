@@ -36,25 +36,25 @@ func NewClientWithClient(
 	}
 }
 
-func (c *Client) AttestAPICall(
+func (c *Client) AttestHTTPCall(
 	ctx context.Context,
 	method string,
 	url string,
-) (AttestAPICallResponse, error) {
-	attestAPICallRequest := AttestAPICallRequest{Method: method, URL: url}
-	attestAPICallResponse := AttestAPICallResponse{}
+) (AttestHTTPCallResponse, error) {
+	attestHTTPCallRequest := AttestHTTPCallRequest{Method: method, URL: url}
+	attestHTTPCallResponse := AttestHTTPCallResponse{}
 	err := c.Do(
 		ctx,
 		"POST",
-		AttestAPICallPath,
-		attestAPICallRequest,
-		&attestAPICallResponse,
+		AttestHTTPCallPath,
+		attestHTTPCallRequest,
+		&attestHTTPCallResponse,
 	)
 	if err != nil {
-		return AttestAPICallResponse{},
-			fmt.Errorf("doing attest api call request: %w", err)
+		return AttestHTTPCallResponse{},
+			fmt.Errorf("doing attest http call request: %w", err)
 	}
-	return attestAPICallResponse, nil
+	return attestHTTPCallResponse, nil
 }
 
 func (c *Client) AttestCEL(

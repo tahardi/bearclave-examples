@@ -50,8 +50,8 @@ func main() {
 
 	serverMux := http.NewServeMux()
 	serverMux.Handle(
-		"POST "+networking.AttestAPICallPath,
-		networking.MakeAttestAPICallHandler(DefaultTimeout, attester, client, logger),
+		"POST "+networking.AttestHTTPCallPath,
+		networking.MakeAttestHTTPCallHandler(DefaultTimeout, attester, client, logger),
 	)
 
 	ctx, cancel := context.WithTimeout(context.Background(), DefaultTimeout)
