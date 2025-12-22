@@ -1,10 +1,7 @@
 package main
 
 import (
-	"bytes"
 	"context"
-	"crypto/sha256"
-	"encoding/base64"
 	"encoding/json"
 	"flag"
 	"log/slog"
@@ -92,31 +89,22 @@ func main() {
 	}
 	logger.Info("verified attestation")
 
-	resBytes, err := json.Marshal(got.Result)
+	attestedExpr := networking.AttestedExpr{}
+	err = json.Unmarshal(verified.UserData, &attestedExpr)
 	if err != nil {
-		logger.Error("marshaling result", slog.String("error", err.Error()))
-		return
-	}
-
-	hash := sha256.Sum256(resBytes)
-	if !bytes.Equal(hash[:], verified.UserData[:len(hash)]) {
-		logger.Error(
-			"userdata verification failed",
-			slog.String("want", base64.StdEncoding.EncodeToString(hash[:])),
-			slog.String("got", base64.StdEncoding.EncodeToString(verified.UserData[:len(hash)])),
-		)
+		logger.Error("unmarshaling attested expression", slog.String("error", err.Error()))
 		return
 	}
 
 	logger.Info(
-		"verified expression",
-		slog.String("expression", got.Result.Expression),
-		slog.Any("env", got.Result.Env),
+		"attested expression",
+		slog.String("expression", attestedExpr.Expression),
+		slog.Any("env", attestedExpr.Env),
 	)
 
-	resultString, ok := got.Result.Output.(string)
+	resultString, ok := attestedExpr.Output.(string)
 	if !ok {
-		logger.Error("expected string output from expression", slog.Any("got", got.Result.Output))
+		logger.Error("expected string output from expression", slog.Any("got", attestedExpr.Output))
 		return
 	}
 	logger.Info("expression result:", slog.String("value", resultString))

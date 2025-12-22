@@ -12,6 +12,7 @@ import (
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
 	"github.com/stretchr/testify/require"
+	"github.com/tahardi/bearclave"
 	"github.com/tahardi/bearclave/mocks"
 	"github.com/tahardi/bearclave/tee"
 )
@@ -30,25 +31,25 @@ func writeResponse(t *testing.T, w http.ResponseWriter, out any) {
 	require.NoError(t, err)
 }
 
-func TestClient_AttestAPICall(t *testing.T) {
+func TestClient_AttestHTTPCall(t *testing.T) {
 	t.Run("happy path", func(t *testing.T) {
 		// given
 		ctx := context.Background()
 		method := http.MethodGet
 		url := "http://httpbin.org/get"
-		want := &tee.AttestResult{Report: []byte("attestation")}
+		want := &tee.AttestResult{Base: &bearclave.AttestResult{Report: []byte("attestation")}}
 
 		handler := http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 			assert.Equal(t, http.MethodPost, r.Method)
-			assert.Contains(t, r.URL.Path, networking.AttestAPICallPath)
+			assert.Contains(t, r.URL.Path, networking.AttestHTTPCallPath)
 
-			req := networking.AttestAPICallRequest{}
+			req := networking.AttestHTTPCallRequest{}
 			err := json.NewDecoder(r.Body).Decode(&req)
 			assert.NoError(t, err)
 			assert.Equal(t, method, req.Method)
 			assert.Equal(t, url, req.URL)
 
-			resp := networking.AttestAPICallResponse{Attestation: want}
+			resp := networking.AttestHTTPCallResponse{Attestation: want}
 			writeResponse(t, w, resp)
 		})
 
@@ -58,14 +59,14 @@ func TestClient_AttestAPICall(t *testing.T) {
 		client := networking.NewClientWithClient(server.URL, server.Client())
 
 		// when
-		got, err := client.AttestAPICall(ctx, method, url)
+		got, err := client.AttestHTTPCall(ctx, method, url)
 
 		// then
 		require.NoError(t, err)
 		assert.Equal(t, want, got.Attestation)
 	})
 
-	t.Run("error - doing attest api call request", func(t *testing.T) {
+	t.Run("error - doing attest http call request", func(t *testing.T) {
 		// given
 		ctx := context.Background()
 		method := http.MethodGet
@@ -81,11 +82,11 @@ func TestClient_AttestAPICall(t *testing.T) {
 		client := networking.NewClientWithClient(server.URL, server.Client())
 
 		// when
-		_, err := client.AttestAPICall(ctx, method, url)
+		_, err := client.AttestHTTPCall(ctx, method, url)
 
 		// then
 		require.ErrorIs(t, err, networking.ErrClient)
-		assert.ErrorContains(t, err, "doing attest api call request")
+		assert.ErrorContains(t, err, "doing attest http call request")
 	})
 }
 
@@ -97,7 +98,7 @@ func TestClient_AttestExpr(t *testing.T) {
 			"targetUrl": "http://httpbin.org/get",
 		}
 		expression := `httpGet(targetUrl).url == targetUrl ? "URL Match Success" : "URL Mismatch"`
-		want := &tee.AttestResult{Report: []byte("attestation")}
+		want := &tee.AttestResult{Base: &bearclave.AttestResult{Report: []byte("attestation")}}
 
 		handler := http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 			assert.Equal(t, http.MethodPost, r.Method)
@@ -158,7 +159,7 @@ func TestClient_AttestUserData(t *testing.T) {
 		ctx := context.Background()
 		data := []byte("hello world")
 		nonce := []byte("nonce")
-		want := &tee.AttestResult{Report: []byte("attestation")}
+		want := &tee.AttestResult{Base: &bearclave.AttestResult{Report: []byte("attestation")}}
 
 		handler := http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 			assert.Equal(t, http.MethodPost, r.Method)

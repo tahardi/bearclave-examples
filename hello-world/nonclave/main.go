@@ -1,9 +1,7 @@
 package main
 
 import (
-	"bytes"
 	"context"
-	"encoding/base64"
 	"flag"
 	"log/slog"
 	"net"
@@ -89,16 +87,8 @@ func main() {
 		return
 	}
 
-	if !bytes.Equal(want, verified.UserData[:len(want)]) {
-		logger.Error(
-			"userdata verification failed",
-			slog.String("want", base64.StdEncoding.EncodeToString(want)),
-			slog.String("got", base64.StdEncoding.EncodeToString(verified.UserData[:len(want)])),
-		)
-		return
-	}
 	logger.Info(
-		"verified userdata",
+		"attested and verified userdata",
 		slog.String("userdata", string(verified.UserData)),
 	)
 }
