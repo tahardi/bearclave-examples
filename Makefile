@@ -7,7 +7,7 @@ SHELL := bash
 .SUFFIXES:
 
 .PHONY: pre-pr
-pre-pr: tidy lint test-unit test-examples
+pre-pr: tidy lint pluckmd test-unit test-examples
 
 # https://golangci-lint.run/welcome/install/#install-from-sources
 # They do not recommend using golangci-lint via go tool directive
@@ -22,6 +22,10 @@ lint:
 .PHONY: lint-fix
 lint-fix:
 	@go tool -modfile=$(lint_modfile) golangci-lint run --config .golangci.yaml --fix
+
+.PHONY: pluckmd
+pluckmd:
+	@pluckmd --dir .
 
 .PHONY: tidy
 tidy:
