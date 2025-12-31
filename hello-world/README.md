@@ -404,4 +404,37 @@ make aws-nitro-instance-stop
 
 ### GCP AMD SEV-SNP & Intel TDX
 
+The build and deployment process for AMD SEV-SNP and Intel TDX on GCP is simpler
+than for AWS Nitro Enclaves and can be done from your local machine. Follow the
+steps below to build and deploy the example as an AMD SEV-SNP or Intel TDX
+Enclave. Note that the commands below are for AMD SEV-SNP, but you can replace
+every `sev` with `tdx` to deploy the example on Intel TDX.
 
+1. Start your compute instance.
+```bash
+make gcp-sev-instance-start
+```
+
+2. Build and deploy the Proxy and Enclave. Here is where we see a major difference
+between AWS Nitro and AMD SEV-SNP/Intel TDX. Both the Proxy and Enclave are
+deployed together within the confidential VM, whereas on Nitro only the Enclave
+resides in the VM and the Proxy is outside on the untrusted host.
+```bash
+make gcp-sev-enclave-run-image 
+```
+
+3. Run the Nonclave. You will have to update the expected measurement in
+`configs/nonclave/sev.yaml` as certain fields change between AMD SEV-SNP
+confidential VM lifecycles (e.g., `report_id`). To determine what the expected
+measurement should be, we recommend running the Nonclave and copying the `got`
+field from the error log message. Once you have the correct expected measurement,
+the Nonclave should successfully verify the attestation report and output the
+witnessed data.
+```bash
+make gcp-sev-nonclave-run 
+```
+
+4. Remember to shutdown your instance(s) when you are done.
+```bash
+make gcp-sev-instance-stop 
+```
