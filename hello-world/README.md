@@ -438,3 +438,10 @@ make gcp-sev-nonclave-run
 ```bash
 make gcp-sev-instance-stop 
 ```
+
+## Next Steps
+
+You now know how to build and deploy Bearclave applications to cloud-based TEE
+platforms! Check out the [next example](../hello-http/README.md) to learn how to
+configure the Proxy as a true HTTP reverse proxy and the Enclave as an HTTP
+server.
