@@ -320,8 +320,88 @@ func main() {
 
 ## Running Locally
 
+Follow the setup
+[instructions](https://github.com/tahardi/bearclave/blob/main/docs/setup.md#install--setup-no-tee)
+in the Bearclave SDK repository to configure your local environment. Afterward,
+you can run the example locally by running `make`in the `hello-world` directory:
+```bash
+make
 
+# You should see output similar to the following:
+[enclave        ] time=2025-12-31T07:06:35.453-05:00 level=INFO msg="loaded config" configs/enclave/notee.yaml="&{Platform:notee Enclave:{Network:tcp Addr:http://127.0.0.1:8083 Route:app/v1} Nonclave:{Measurement: Route:} Proxy:{Network:tcp InAddr:http://0.0.0.0:8080 OutAddr:http://127.0.0.1:8082}}"
+[enclave        ] time=2025-12-31T07:06:35.454-05:00 level=INFO msg="waiting to receive userdata from enclave-proxy..."
+[proxy  ] time=2025-12-31T07:06:35.467-05:00 level=INFO msg="loaded config" configs/enclave/notee.yaml="&{Platform:notee Enclave:{Network:tcp Addr:http://127.0.0.1:8083 Route:app/v1} Nonclave:{Measurement: Route:} Proxy:{Network:tcp InAddr:http://0.0.0.0:8080 OutAddr:http://127.0.0.1:8082}}"
+[proxy  ] time=2025-12-31T07:06:35.468-05:00 level=INFO msg="proxy server started" addr=[::]:8080
+[nonclave       ] time=2025-12-31T07:06:36.014-05:00 level=INFO msg="loaded config" configs/nonclave/notee.yaml="&{Platform:notee Enclave:{Network: Addr: Route:} Nonclave:{Measurement:Not a TEE platform. Code measurements are not real. Route:app/v1} Proxy:{Network: InAddr: OutAddr:}}"
+[proxy  ] time=2025-12-31T07:06:36.015-05:00 level=INFO msg="sending attestation request to enclave..."
+[proxy  ] time=2025-12-31T07:06:36.015-05:00 level=INFO msg="waiting for attestation from enclave..."
+[enclave        ] time=2025-12-31T07:06:36.015-05:00 level=INFO msg=attesting nonce="random nonce here" userdata="Hello, world!"
+[enclave        ] time=2025-12-31T07:06:36.015-05:00 level=INFO msg="sending attestation to enclave-proxy..."
+[enclave        ] time=2025-12-31T07:06:36.015-05:00 level=INFO msg="waiting to receive userdata from enclave-proxy..."
+[proxy  ] time=2025-12-31T07:06:36.016-05:00 level=INFO msg="sent attestation to client"
+[nonclave       ] time=2025-12-31T07:06:36.016-05:00 level=INFO msg="attested and verified userdata" userdata="Hello, world!"
+```
 
 ## Running on the Cloud
+
+Follow the setup
+[instructions](https://github.com/tahardi/bearclave/blob/main/docs/setup.md#install--setup-no-tee)
+in the Bearclave SDK repository to configure your cloud environment.
+
+### AWS Nitro Enclaves
+
+The build and deployment process for AWS Nitro Enclaves is different and more
+involved than for AMD SEV-SNP and Intel TDX on GCP. Follow the steps below
+to build and deploy the example as an AWS Nitro Enclave.
+
+1. SSH into your EC2 instance. There are convenience targets in the Makefile
+for logging into the aws cli tool, starting your instance, and ssh'ing into
+your instance.
+```bash
+make aws-cli-login
+make aws-nitro-instance-start
+make aws-nitro-instance-ssh
+```
+
+2. Clone `bearclave-examples` on your EC2 instance and switch to this example's
+directory.
+```bash
+git clone git@github.com:tahardi/bearclave-examples.git
+cd bearclave-examples/hello-world
+```
+
+3. Build the Enclave and run it in debug mode.
+```bash
+make aws-nitro-enclave-run-eif-debug 
+```
+
+4. In a separate terminal window, ssh into your EC2 instance again and start
+the Proxy.
+```bash
+make aws-nitro-instance-ssh
+cd bearclave-examples/hello-world
+make aws-nitro-proxy-run 
+```
+
+5. In a separate terminal window, run the Nonclave. Note that you will need to
+edit the `measurement` variable in `configs/nonclave/nitro.yaml` since we are
+running the Enclave in debug mode. When Nitro Enclaves are running in debug mode,
+PCRs 0-2 are set to zeros. Either copy the zero value from PCR3 or run the
+Nonclave and copy the "got" value from the measurement mismatch error log.
+
+```bash
+make aws-nitro-nonclave-run
+```
+
+6. Assuming the measurement in your config is correct, you should see the
+nonclave successfully verify the attestation report and output the witnessed
+data. Remember to shutdown your EC2 instance when you are done.
+
+```bash
+exit
+make aws-nitro-instance-stop
+```
+
+### GCP AMD SEV-SNP & Intel TDX
 
 
