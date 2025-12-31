@@ -38,6 +38,7 @@ func main() {
 
 	inCtx, inCancel := context.WithTimeout(context.Background(), DefaultTimeout)
 	defer inCancel()
+
 	inboundServer, err := tee.NewReverseProxy(
 		inCtx,
 		config.Platform,
