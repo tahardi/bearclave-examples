@@ -90,8 +90,8 @@ func main() {
 	}
 	logger.Info("loaded config", slog.Any(configFile, config))
 
-	sockCtx, sockCanel := context.WithTimeout(context.Background(), DefaultTimeout)
-	defer sockCanel()
+	sockCtx, sockCancel := context.WithTimeout(context.Background(), DefaultTimeout)
+	defer sockCancel()
 	socket, err := tee.NewSocket(
 		sockCtx,
 		config.Platform,

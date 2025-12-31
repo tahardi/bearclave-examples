@@ -45,7 +45,7 @@ nonclave: nonclave/bin/nonclave
 ################################################################################
 # AWS - Targets for deploying to AWS-supported TEE platforms
 ################################################################################
-aws_profile=personal
+aws_profile=bearclave
 aws_region=us-east-2
 
 .PHONY: aws-cli-login
