@@ -72,6 +72,8 @@ github.com/subosito/gotenv v1.6.0 h1:9NlTDc1FTs4qu0DDq7AEtTPNw6SVm7uBMsUCUjABIf8
 github.com/subosito/gotenv v1.6.0/go.mod h1:Dk4QP5c2W3ibzajGcXpNraDfq2IrhjMIvMSWPKKo0FU=
 github.com/tahardi/bearclave v0.1.1-0.20251222154407-7cf8092dde90 h1:pKhCKtEyT0xk04l5lPipwQ6lvChzWqXcfc3RO3jKoQU=
 github.com/tahardi/bearclave v0.1.1-0.20251222154407-7cf8092dde90/go.mod h1:t7CzJOzegTKWLN/OvY+c/YpMf8r+/6cjY+hURklejCM=
+github.com/tahardi/bearclave v0.1.1-0.20260102122820-3fc738efd483 h1:9sxXhbBitbtxN33pLCZ9IeXfTq+ZZPM4o0o8KnvJtlk=
+github.com/tahardi/bearclave v0.1.1-0.20260102122820-3fc738efd483/go.mod h1:FT9DRExtxH6ET44jnP0omFDO2zYflxlVvwnHDAuFHus=
 github.com/x448/float16 v0.8.4 h1:qLwI1I70+NjRFUR3zs1JPUCgaCXSh3SW62uAKT1mSBM=
 github.com/x448/float16 v0.8.4/go.mod h1:14CWIYCyZA/cWjXOioeEpHeN/83MdbZDRQHoFcYsOfg=
 github.com/yuin/goldmark v1.2.1/go.mod h1:3hX8gzYuyVAZsxl0MRgGTJEmQBFcNTphYh9decYSb74=
