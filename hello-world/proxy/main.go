@@ -113,7 +113,7 @@ func main() {
 	defer servCancel()
 	server, err := tee.NewServer(
 		servCtx,
-		config.Platform,
+		tee.NoTEE,
 		config.Proxy.Network,
 		config.Proxy.InAddr,
 		mux,

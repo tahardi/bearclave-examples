@@ -7,7 +7,7 @@ require (
 	github.com/google/cel-go v0.26.1
 	github.com/spf13/viper v1.21.0
 	github.com/stretchr/testify v1.11.1
-	github.com/tahardi/bearclave v0.1.1-0.20251222154407-7cf8092dde90
+	github.com/tahardi/bearclave v0.1.1-0.20260102122820-3fc738efd483
 )
 
 require (
@@ -23,7 +23,6 @@ require (
 	github.com/google/logger v1.1.1 // indirect
 	github.com/google/uuid v1.6.0 // indirect
 	github.com/hf/nitrite v0.0.0-20241225144000-c2d5d3c4f303 // indirect
-	github.com/hf/nsm v0.0.0-20220930140112-cd181bd646b9 // indirect
 	github.com/mdlayher/socket v0.4.1 // indirect
 	github.com/mdlayher/vsock v1.2.1 // indirect
 	github.com/pelletier/go-toml/v2 v2.2.4 // indirect
