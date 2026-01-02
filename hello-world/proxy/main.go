@@ -96,7 +96,7 @@ func main() {
 		sockCtx,
 		config.Platform,
 		config.Proxy.Network,
-		config.Proxy.InAddr,
+		config.Proxy.OutAddr,
 	)
 	if err != nil {
 		logger.Error("making socket", slog.String("error", err.Error()))
