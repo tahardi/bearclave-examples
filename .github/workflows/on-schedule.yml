@@ -3,33 +3,37 @@ name: On Schedule
 on:
   workflow_dispatch:
   schedule:
-    - cron: '0 0 * * 0'
+    - cron: '0 5 * * *'
 
 concurrency:
   group: ${{ github.workflow }}-${{ github.ref }}
   cancel-in-progress: true
 
 jobs:
-  notee-test:
+  stop-ec2s:
+    name: Terminate EC2 Instances
     runs-on: ubuntu-latest
-    strategy:
-      fail-fast: false
-      matrix:
-        example: [hello-world, hello-http, hello-expr, hello-cel]
-
+    permissions:
+      id-token: write
+      contents: read
     steps:
-      - name: Checkout Repo
-        uses: actions/checkout@v4
-
-      - name: Set up Go
-        uses: actions/setup-go@v5
+      - name: Configure AWS Credentials
+        uses: aws-actions/configure-aws-credentials@v5.1.1
         with:
-          go-version-file: './go.mod'
+          role-to-assume: arn:aws:iam::480429191343:role/GitHub_Actions_Bearclave
+          aws-region: us-east-2
 
-      - name: Install Process Compose
+      - name: Stop Running EC2 Instances
         run: |
-          sh -c "$(curl --location https://raw.githubusercontent.com/F1bonacc1/process-compose/main/scripts/get-pc.sh)" -- -d -b /usr/local/bin
-
-      - name: Run NoTEE Example - ${{ matrix.example }}
-        working-directory: ${{ matrix.example }}
-        run: make
+          INSTANCE_IDS=$(aws ec2 describe-instances \
+            --filters "Name=instance-state-name,Values=running" \
+            --query 'Reservations[*].Instances[*].InstanceId' \
+            --output text)
+          
+          if [ -z "$INSTANCE_IDS" ]; then
+            echo "No running instances found."
+          else
+            echo "Stopping instances: $INSTANCE_IDS"
+            aws ec2 stop-instances --instance-ids $INSTANCE_IDS
+            echo "Stop command sent successfully."
+          fi

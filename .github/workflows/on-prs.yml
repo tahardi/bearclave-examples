@@ -41,3 +41,26 @@ jobs:
 
       - name: Run Unit Tests
         run: make test-unit
+
+  notee-test:
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        example: [hello-world, hello-http, hello-expr, hello-cel]
+    steps:
+      - name: Checkout Repo
+        uses: actions/checkout@v4
+
+      - name: Set up Go
+        uses: actions/setup-go@v5
+        with:
+          go-version-file: './go.mod'
+
+      - name: Install Process Compose
+        run: |
+          sh -c "$(curl --location https://raw.githubusercontent.com/F1bonacc1/process-compose/main/scripts/get-pc.sh)" -- -d -b /usr/local/bin
+
+      - name: Run NoTEE Example - ${{ matrix.example }}
+        working-directory: ${{ matrix.example }}
+        run: make
