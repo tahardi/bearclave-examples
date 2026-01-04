@@ -54,13 +54,18 @@ jobs:
       - name: Stop Running VM Instances
         run: |
           INSTANCE_NAMES=$(gcloud compute instances list \
+            --project=bearclave \
+            --zones=us-central1-a \
             --filter="status=RUNNING" \
             --format="value(name)")
+          
+          # Trim newlines and convert to space-separated format
+          INSTANCE_NAMES=$(echo $INSTANCE_NAMES | tr '\n' ' ')
           
           if [ -z "$INSTANCE_NAMES" ]; then
             echo "No running instances found."
           else
             echo "Stopping instances: $INSTANCE_NAMES"
-            gcloud compute instances stop $INSTANCE_NAMES
+            gcloud compute instances stop --zone=us-central1-a
             echo "Stop command sent successfully."
           fi
