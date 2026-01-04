@@ -66,6 +66,6 @@ jobs:
             echo "No running instances found."
           else
             echo "Stopping instances: $INSTANCE_NAMES"
-            gcloud compute instances stop --zone=us-central1-a
+            gcloud compute instances stop $INSTANCE_NAMES --zone=us-central1-a
             echo "Stop command sent successfully."
           fi
