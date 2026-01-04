@@ -10,8 +10,8 @@ concurrency:
   cancel-in-progress: true
 
 jobs:
-  stop-ec2s:
-    name: Terminate EC2 Instances
+  stop-aws-compute:
+    name: Terminate AWS Compute Instances
     runs-on: ubuntu-latest
     permissions:
       id-token: write
@@ -35,5 +35,37 @@ jobs:
           else
             echo "Stopping instances: $INSTANCE_IDS"
             aws ec2 stop-instances --instance-ids $INSTANCE_IDS
+            echo "Stop command sent successfully."
+          fi
+
+  stop-gcp-compute:
+    name: Terminate GCP Compute Instances
+    runs-on: ubuntu-latest
+    permissions:
+      id-token: write
+      contents: read
+    steps:
+      - name: Authenticate to GCP
+        uses: google-github-actions/auth@v3
+        with:
+          workload_identity_provider: "projects/403490793521/locations/global/workloadIdentityPools/bearclave-github/providers/github"
+          service_account: "bearclave-github@bearclave.iam.gserviceaccount.com"
+
+      - name: Stop Running VM Instances
+        run: |
+          INSTANCE_NAMES=$(gcloud compute instances list \
+            --project=bearclave \
+            --zones=us-central1-a \
+            --filter="status=RUNNING" \
+            --format="value(name)")
+          
+          # Trim newlines and convert to space-separated format
+          INSTANCE_NAMES=$(echo $INSTANCE_NAMES | tr '\n' ' ')
+          
+          if [ -z "$INSTANCE_NAMES" ]; then
+            echo "No running instances found."
+          else
+            echo "Stopping instances: $INSTANCE_NAMES"
+            gcloud compute instances stop $INSTANCE_NAMES --zone=us-central1-a
             echo "Stop command sent successfully."
           fi
