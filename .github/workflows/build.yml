@@ -117,7 +117,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        example: [hello-world]
+        example: [hello-world, hello-http, hello-expr, hello-cel]
     env:
       AWS_REGION: us-east-2
       S3_BUCKET: bearclave
