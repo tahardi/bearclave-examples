@@ -11,8 +11,39 @@ concurrency:
   cancel-in-progress: true
 
 jobs:
-  sev-snp:
-    name: Build Examples for AMD SEV-SNP
+  build-binaries:
+    name: Build Enclave & Proxy Go Binaries
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        example: [hello-world]
+    steps:
+      - name: Checkout Bearclave Examples
+        uses: actions/checkout@v6
+
+      - name: Install Go
+        uses: actions/setup-go@v6
+        with:
+          go-version-file: './go.mod'
+
+      - name: Build ${{ matrix.example}} Enclave & Proxy Go Binaries
+        working-directory: ${{ matrix.example }}
+        run: |
+          make enclave
+          make proxy
+
+      - name: Cache ${{ matrix.example }} Binaries
+        uses: actions/cache@v4
+        with:
+          path: |
+            ${{ matrix.example }}/enclave/bin
+            ${{ matrix.example }}/proxy/bin
+          key: binaries-${{ matrix.example }}-${{ github.sha }}
+
+  build-sev-snp:
+    name: Build AMD SEV-SNP Images
+    needs: build-binaries
     runs-on: ubuntu-latest
     permissions:
       id-token: write
@@ -20,7 +51,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        example: [hello-world]
+        example: [hello-world, hello-http, hello-expr, hello-cel]
     env:
       GCP_PROJECT_ID: bearclave
       GCP_REGION: us-east1
@@ -38,11 +69,6 @@ jobs:
           workload_identity_provider: "projects/403490793521/locations/global/workloadIdentityPools/bearclave-github/providers/github"
           service_account: "bearclave-github@bearclave.iam.gserviceaccount.com"
 
-      - name: Install Go
-        uses: actions/setup-go@v6
-        with:
-          go-version-file: './go.mod'
-
       - name: Install Docker
         uses: docker/setup-buildx-action@v3
 
@@ -52,6 +78,14 @@ jobs:
       - name: Configure Docker to Use GCP Artifact Registry
         run: |
           gcloud auth configure-docker ${{ env.GCP_REGION }}-docker.pkg.dev
+
+      - name: Restore Cached Binaries
+        uses: actions/cache@v4
+        with:
+          path: |
+            ${{ matrix.example }}/enclave/bin
+            ${{ matrix.example }}/proxy/bin
+          key: binaries-${{ matrix.example }}-${{ github.sha }}
 
       - name: Generate Image Tags
         id: tags
@@ -70,12 +104,6 @@ jobs:
           echo "Branch: ${BRANCH_NAME}"
           echo "Commit SHA: ${COMMIT_SHA}"
           echo "Version: ${VERSION}"
-
-      - name: Build Enclave & Proxy Go Binaries
-        working-directory: ${{ matrix.example }}
-        run: |
-          make enclave
-          make proxy
 
       - name: Build and Push ${{ matrix.example }} SEV-SNP Image
         working-directory: ${{ matrix.example }}
@@ -103,8 +131,9 @@ jobs:
             --push \
             .
 
-  tdx:
-    name: Build Examples for Intel TDX
+  build-tdx:
+    name: Build Intel TDX Images
+    needs: build-binaries
     runs-on: ubuntu-latest
     permissions:
       id-token: write
@@ -130,11 +159,6 @@ jobs:
           workload_identity_provider: "projects/403490793521/locations/global/workloadIdentityPools/bearclave-github/providers/github"
           service_account: "bearclave-github@bearclave.iam.gserviceaccount.com"
 
-      - name: Install Go
-        uses: actions/setup-go@v6
-        with:
-          go-version-file: './go.mod'
-
       - name: Install Docker
         uses: docker/setup-buildx-action@v3
 
@@ -144,6 +168,14 @@ jobs:
       - name: Configure Docker to Use GCP Artifact Registry
         run: |
           gcloud auth configure-docker ${{ env.GCP_REGION }}-docker.pkg.dev
+
+      - name: Restore Cached Binaries
+        uses: actions/cache@v4
+        with:
+          path: |
+            ${{ matrix.example }}/enclave/bin
+            ${{ matrix.example }}/proxy/bin
+          key: binaries-${{ matrix.example }}-${{ github.sha }}
 
       - name: Generate Image Tags
         id: tags
@@ -162,12 +194,6 @@ jobs:
           echo "Branch: ${BRANCH_NAME}"
           echo "Commit SHA: ${COMMIT_SHA}"
           echo "Version: ${VERSION}"
-
-      - name: Build Enclave & Proxy Go Binaries
-        working-directory: ${{ matrix.example }}
-        run: |
-          make enclave
-          make proxy
 
       - name: Build and Push ${{ matrix.example }} TDX Image
         working-directory: ${{ matrix.example }}
