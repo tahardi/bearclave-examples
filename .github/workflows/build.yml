@@ -204,26 +204,35 @@ jobs:
         run: |
           # Upload latest with a preservation tag. This is used by the bucket's
           # lifecycle policy. Every object will be deleted after 1 week except
-          # those tagged with preserve=true. This allows us to keep the latest
+          # those tagged with preserve=true.
           aws s3api put-object \
             --bucket ${{ env.S3_BUCKET }} \
             --key examples/nitro/${{ matrix.example }}/enclave-latest.eif \
             --body ./enclave.eif \
             --metadata "example=${{ matrix.example }},commit=${COMMIT_SHA},branch=${BRANCH},timestamp=$(date -u +%Y-%m-%dT%H:%M:%SZ)" \
             --tagging 'preserve=true'
+          
+          aws s3api put-object \
+            --bucket ${{ env.S3_BUCKET }} \
+            --key examples/nitro/${{ matrix.example }}/enclave-${BRANCH}.eif \
+            --body ./enclave.eif \
+            --metadata "example=${{ matrix.example }},commit=${COMMIT_SHA},branch=${BRANCH},timestamp=$(date -u +%Y-%m-%dT%H:%M:%SZ)" \
+            --tagging 'preserve=true'
+
+          aws s3api put-object \
+            --bucket ${{ env.S3_BUCKET }} \
+            --key examples/nitro/${{ matrix.example }}/enclave-${COMMIT_SHA}.eif \
+            --body ./enclave.eif \
+            --metadata "example=${{ matrix.example }},commit=${COMMIT_SHA},branch=${BRANCH},timestamp=$(date -u +%Y-%m-%dT%H:%M:%SZ)" \
+            --tagging 'preserve=true'
     
-          aws s3 cp ./enclave.eif \
-            s3://${{ env.S3_BUCKET }}/examples/nitro/${{ matrix.example }}/enclave-${BRANCH}.eif \
-            --metadata "example=${{ matrix.example }},commit=${COMMIT_SHA},branch=${BRANCH},timestamp=$(date -u +%Y-%m-%dT%H:%M:%SZ)"
-
-          aws s3 cp ./enclave.eif \
-            s3://${{ env.S3_BUCKET }}/examples/nitro/${{ matrix.example }}/enclave-${COMMIT_SHA}.eif \
-            --metadata "example=${{ matrix.example }},commit=${COMMIT_SHA},branch=${BRANCH},timestamp=$(date -u +%Y-%m-%dT%H:%M:%SZ)"
-
           if [ -n "${{ env.VERSION }}" ]; then
-            aws s3 cp ./enclave.eif \
-              s3://${{ env.S3_BUCKET }}/examples/nitro/${{ matrix.example }}/enclave-${VERSION}.eif \
-              --metadata "example=${{ matrix.example }},commit=${COMMIT_SHA},branch=${BRANCH},version=${VERSION},timestamp=$(date -u +%Y-%m-%dT%H:%M:%SZ)"
+            aws s3api put-object \
+              --bucket ${{ env.S3_BUCKET }} \
+              --key examples/nitro/${{ matrix.example }}/enclave-${VERSION}.eif \
+              --body ./enclave.eif \
+              --metadata "example=${{ matrix.example }},commit=${COMMIT_SHA},branch=${BRANCH},timestamp=$(date -u +%Y-%m-%dT%H:%M:%SZ),version=${VERSION}" \
+              --tagging 'preserve=false' 
           fi
 
       - name: Upload Proxy Binary to S3
@@ -243,18 +252,27 @@ jobs:
             --metadata "example=${{ matrix.example }},commit=${COMMIT_SHA},branch=${BRANCH},timestamp=$(date -u +%Y-%m-%dT%H:%M:%SZ)" \
             --tagging 'preserve=true'
 
-          aws s3 cp ./proxy/bin/proxy \
-            s3://${{ env.S3_BUCKET }}/examples/nitro/${{ matrix.example }}/proxy-${BRANCH} \
-            --metadata "example=${{ matrix.example }},commit=${COMMIT_SHA},branch=${BRANCH},timestamp=$(date -u +%Y-%m-%dT%H:%M:%SZ)"
-          
-          aws s3 cp ./proxy/bin/proxy \
-            s3://${{ env.S3_BUCKET }}/examples/nitro/${{ matrix.example }}/proxy-${COMMIT_SHA} \
-            --metadata "example=${{ matrix.example }},commit=${COMMIT_SHA},branch=${BRANCH},timestamp=$(date -u +%Y-%m-%dT%H:%M:%SZ)"
-          
+          aws s3api put-object \
+            --bucket ${{ env.S3_BUCKET }} \
+            --key examples/nitro/${{ matrix.example }}/proxy-${BRANCH} \
+            --body ./proxy/bin/proxy \
+            --metadata "example=${{ matrix.example }},commit=${COMMIT_SHA},branch=${BRANCH},timestamp=$(date -u +%Y-%m-%dT%H:%M:%SZ)" \
+            --tagging 'preserve=false'
+
+          aws s3api put-object \
+            --bucket ${{ env.S3_BUCKET }} \
+            --key examples/nitro/${{ matrix.example }}/proxy-${COMMIT_SHA} \
+            --body ./proxy/bin/proxy \
+            --metadata "example=${{ matrix.example }},commit=${COMMIT_SHA},branch=${BRANCH},timestamp=$(date -u +%Y-%m-%dT%H:%M:%SZ)" \
+            --tagging 'preserve=false'
+
           if [ -n "${{ env.VERSION }}" ]; then
-            aws s3 cp ./proxy/bin/proxy \
-              s3://${{ env.S3_BUCKET }}/examples/nitro/${{ matrix.example }}/proxy-${VERSION} \
-              --metadata "example=${{ matrix.example }},commit=${COMMIT_SHA},branch=${BRANCH},version=${VERSION},timestamp=$(date -u +%Y-%m-%dT%H:%M:%SZ)"
+            aws s3api put-object \
+              --bucket ${{ env.S3_BUCKET }} \
+              --key examples/nitro/${{ matrix.example }}/proxy-${VERSION} \
+              --body ./proxy/bin/proxy \
+              --metadata "example=${{ matrix.example }},commit=${COMMIT_SHA},branch=${BRANCH},timestamp=$(date -u +%Y-%m-%dT%H:%M:%SZ),version=${VERSION}" \
+              --tagging 'preserve=false'
           fi
 
   build-sev-snp:
