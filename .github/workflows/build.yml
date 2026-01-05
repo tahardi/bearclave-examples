@@ -32,6 +32,12 @@ jobs:
           fetch-depth: 0
           fetch-tags: true
 
+      - name: Get OIDC Token for GCP
+        uses: google-github-actions/auth@v3
+        with:
+          workload_identity_provider: "projects/403490793521/locations/global/workloadIdentityPools/bearclave-github/providers/github"
+          service_account: "bearclave-github@bearclave.iam.gserviceaccount.com"
+
       - name: Install Go
         uses: actions/setup-go@v6
         with:
@@ -117,6 +123,12 @@ jobs:
         with:
           fetch-depth: 0
           fetch-tags: true
+
+      - name: Get OIDC Token for GCP
+        uses: google-github-actions/auth@v3
+        with:
+          workload_identity_provider: "projects/403490793521/locations/global/workloadIdentityPools/bearclave-github/providers/github"
+          service_account: "bearclave-github@bearclave.iam.gserviceaccount.com"
 
       - name: Install Go
         uses: actions/setup-go@v6
