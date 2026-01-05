@@ -87,8 +87,9 @@ jobs:
             - <<'EOF'
           FROM amazonlinux:2023
           ARG NITRO_CLI_VERSION=v1.4.3
-          RUN yum install -y docker python3-pip python3-devel gcc openssl-devel
-          RUN pip install "nitro-cli==${NITRO_CLI_VERSION#v}"
+          RUN dnf install -y \
+            aws-nitro-enclaves-cli-$NITRO_CLI_VERSION \
+            aws-nitro-enclaves-cli-devel-$NITRO_CLI_VERSION
           RUN nitro-cli --version
           ENTRYPOINT ["nitro-cli"]
           EOF
