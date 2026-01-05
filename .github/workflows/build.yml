@@ -51,7 +51,7 @@ jobs:
     name: Build nitro-cli Docker Image
     runs-on: ubuntu-latest
     env:
-      NITRO_CLI_VERSION: v1.4.0
+      NITRO_CLI_VERSION: 1.4.0
       REGISTRY: ghcr.io
       IMAGE_NAME: nitro-cli-builder
     outputs:
@@ -86,7 +86,7 @@ jobs:
             -t ${{ env.IMAGE_NAME }}:latest \
             - <<'EOF'
           FROM amazonlinux:2023
-          ARG NITRO_CLI_VERSION=v1.4.0
+          ARG NITRO_CLI_VERSION=1.4.3
           RUN dnf install -y \
             aws-nitro-enclaves-cli-$NITRO_CLI_VERSION \
             aws-nitro-enclaves-cli-devel-$NITRO_CLI_VERSION
