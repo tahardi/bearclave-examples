@@ -11,6 +11,8 @@ concurrency:
   cancel-in-progress: true
 
 jobs:
+  # The Enclave and Proxy Go Binaries are the same regardless of TEE platform.
+  # We build and cache them for reuse across matrix jobs.
   build-binaries:
     name: Build Enclave & Proxy Go Binaries
     runs-on: ubuntu-latest
@@ -40,6 +42,207 @@ jobs:
             ${{ matrix.example }}/enclave/bin
             ${{ matrix.example }}/proxy/bin
           key: binaries-${{ matrix.example }}-${{ github.sha }}
+
+  # Build the nitro-cli Docker Image once and reuse it for all subsequent
+  # workflow runs. This will only re-build the nitro-cli image if the version
+  # is updated. We pin the version since EIF measurements may change if any
+  # of the nitro-cli build assets change.
+  build-nitro-cli-image:
+    name: Build nitro-cli Docker Image
+    runs-on: ubuntu-latest
+    env:
+      NITRO_CLI_VERSION: v1.4.3
+      REGISTRY: ghcr.io
+      IMAGE_NAME: nitro-cli-builder
+    outputs:
+      image-uri: ${{ steps.image.outputs.uri }}
+    steps:
+      - name: Log in to GitHub Container Registry
+        uses: docker/login-action@v3
+        with:
+          registry: ${{ env.REGISTRY }}
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Check if Image Tag Exists
+        id: check-image
+        run: |
+          IMAGE_URI="${{ env.REGISTRY }}/${{ github.repository }}/${{ env.IMAGE_NAME }}:${{ env.NITRO_CLI_VERSION }}"
+          if docker pull $IMAGE_URI 2>/dev/null; then
+            echo "exists=true" >> $GITHUB_OUTPUT
+            echo "image-uri=${IMAGE_URI}" >> $GITHUB_OUTPUT
+            echo "Image ${{ env.NITRO_CLI_VERSION }} already exists in registry"
+          else
+            echo "exists=false" >> $GITHUB_OUTPUT
+            echo "image-uri=${IMAGE_URI}" >> $GITHUB_OUTPUT
+            echo "Image ${{ env.NITRO_CLI_VERSION }} not found, will build"
+          fi
+
+      - name: Build nitro-cli Container
+        if: steps.check-image.outputs.exists == 'false'
+        run: |
+          docker build \
+            --build-arg NITRO_CLI_VERSION=${{ env.NITRO_CLI_VERSION }} \
+            -t ${{ env.IMAGE_NAME }}:latest \
+            - <<'EOF'
+          FROM amazonlinux:2023
+          ARG NITRO_CLI_VERSION=v1.4.3
+          RUN yum install -y docker python3-pip python3-devel gcc openssl-devel
+          RUN pip install "nitro-cli==${NITRO_CLI_VERSION#v}"
+          RUN nitro-cli --version
+          ENTRYPOINT ["nitro-cli"]
+          EOF
+
+      - name: Push nitro-cli Image
+        if: steps.check-image.outputs.exists == 'false'
+        run: |
+          docker tag ${{ env.IMAGE_NAME }}:latest ${{ steps.check-image.outputs.image-uri }}
+          docker push ${{ steps.check-image.outputs.image-uri }}
+          echo "Pushed ${{ steps.check-image.outputs.image-uri }}"
+
+      - name: Set Output Image URI
+        id: image
+        run: echo "uri=${{ steps.check-image.outputs.image-uri }}" >> $GITHUB_OUTPUT
+
+  build-nitro:
+    name: Build AWS Nitro EIFs
+    needs: [build-binaries, build-nitro-cli-image]
+    runs-on: ubuntu-latest
+    permissions:
+      id-token: write
+      contents: read
+    strategy:
+      fail-fast: false
+      matrix:
+        example: [hello-world]
+    env:
+      AWS_REGION: us-east-2
+      S3_BUCKET: bearclave
+      REGISTRY: ghcr.io
+    steps:
+      - name: Checkout Bearclave Examples
+        uses: actions/checkout@v6
+        with:
+          fetch-depth: 0
+          fetch-tags: true
+
+      - name: Configure AWS Credentials
+        uses: aws-actions/configure-aws-credentials@v5
+        with:
+          role-to-assume: arn:aws:iam::480429191343:role/GitHub_Actions_Bearclave
+          aws-region: ${{ env.AWS_REGION }}
+
+      - name: Install Docker
+        uses: docker/setup-buildx-action@v3
+
+      - name: Restore Cached Binaries
+        uses: actions/cache@v4
+        with:
+          path: |
+            ${{ matrix.example }}/enclave/bin
+            ${{ matrix.example }}/proxy/bin
+          key: binaries-${{ matrix.example }}-${{ github.sha }}
+
+      - name: Log in to GitHub Container Registry
+        uses: docker/login-action@v3
+        with:
+          registry: ${{ env.REGISTRY }}
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Pull nitro-cli Image
+        run: docker pull ${{ needs.build-nitro-cli-image.outputs.image-uri }}
+
+      - name: Generate Artifact Tags
+        id: tags
+        run: |
+          # Get branch name, replacing '/' with '-' for valid S3 key
+          BRANCH_NAME=$(echo "${{ github.ref_name }}" | sed 's/\//-/g')
+          echo "branch=${BRANCH_NAME}" >> $GITHUB_OUTPUT
+          
+          COMMIT_SHA=$(git rev-parse --short HEAD)
+          echo "commit_sha=${COMMIT_SHA}" >> $GITHUB_OUTPUT
+          
+          # Get version from git tag (if it exists)
+          VERSION=$(git describe --tags --exact-match 2>/dev/null || echo "")
+          echo "version=${VERSION}" >> $GITHUB_OUTPUT
+          
+          echo "Branch: ${BRANCH_NAME}"
+          echo "Commit SHA: ${COMMIT_SHA}"
+          echo "Version: ${VERSION}"
+
+      - name: Build ${{ matrix.example }} Nitro Docker Image
+        working-directory: ${{ matrix.example }}
+        run: |
+          docker build \
+            -f ./nitro.Dockerfile \
+            -t ${{ matrix.example }}-enclave-nitro:latest \
+            --build-arg CONFIG_FILE=configs/enclave/nitro.yaml \
+            .
+
+      - name: Build ${{ matrix.example }} Nitro EIF
+        working-directory: ${{ matrix.example }}
+        run: |
+          docker run --rm \
+            -v /var/run/docker.sock:/var/run/docker.sock \
+            -v $(pwd):/workspace \
+            -w /workspace \
+            ${{ needs.build-nitro-cli-image.outputs.image-uri }} \
+            build-enclave \
+              --docker-uri ${{ matrix.example }}-enclave-nitro:latest \
+              --output-file ./enclave.eif
+
+      - name: Upload EIF to S3
+        working-directory: ${{ matrix.example }}
+        env:
+          BRANCH: ${{ steps.tags.outputs.branch }}
+          COMMIT_SHA: ${{ steps.tags.outputs.commit_sha }}
+          VERSION: ${{ steps.tags.outputs.version }}
+        run: |
+          # Upload EIF with multiple tags
+          aws s3 cp ./enclave.eif \
+            s3://${{ env.S3_BUCKET }}/examples/nitro/${{ matrix.example }}/latest.eif \
+            --metadata "example=${{ matrix.example }},commit=${COMMIT_SHA},branch=${BRANCH},timestamp=$(date -u +%Y-%m-%dT%H:%M:%SZ)"
+
+          aws s3 cp ./enclave.eif \
+            s3://${{ env.S3_BUCKET }}/examples/nitro/${{ matrix.example }}/${BRANCH}.eif \
+            --metadata "example=${{ matrix.example }},commit=${COMMIT_SHA},branch=${BRANCH},timestamp=$(date -u +%Y-%m-%dT%H:%M:%SZ)"
+
+          aws s3 cp ./enclave.eif \
+            s3://${{ env.S3_BUCKET }}/examples/nitro/${{ matrix.example }}/${COMMIT_SHA}.eif \
+            --metadata "example=${{ matrix.example }},commit=${COMMIT_SHA},branch=${BRANCH},timestamp=$(date -u +%Y-%m-%dT%H:%M:%SZ)"
+
+          if [ -n "${{ env.VERSION }}" ]; then
+            aws s3 cp ./enclave.eif \
+              s3://${{ env.S3_BUCKET }}/examples/nitro/${{ matrix.example }}/${VERSION}.eif \
+              --metadata "example=${{ matrix.example }},commit=${COMMIT_SHA},branch=${BRANCH},version=${VERSION},timestamp=$(date -u +%Y-%m-%dT%H:%M:%SZ)"
+          fi
+
+      - name: Upload Proxy Binary to S3
+        working-directory: ${{ matrix.example }}
+        env:
+          BRANCH: ${{ steps.tags.outputs.branch }}
+          COMMIT_SHA: ${{ steps.tags.outputs.commit_sha }}
+          VERSION: ${{ steps.tags.outputs.version }}
+        run: |
+          # Upload proxy binary with multiple tags
+          aws s3 cp ./proxy/bin/proxy \
+            s3://${{ env.S3_BUCKET }}/examples/nitro/${{ matrix.example }}/proxy-latest \
+            --metadata "example=${{ matrix.example }},commit=${COMMIT_SHA},branch=${BRANCH},timestamp=$(date -u +%Y-%m-%dT%H:%M:%SZ)"
+          
+          aws s3 cp ./proxy/bin/proxy \
+            s3://${{ env.S3_BUCKET }}/examples/nitro/${{ matrix.example }}/proxy-${BRANCH} \
+            --metadata "example=${{ matrix.example }},commit=${COMMIT_SHA},branch=${BRANCH},timestamp=$(date -u +%Y-%m-%dT%H:%M:%SZ)"
+          
+          aws s3 cp ./proxy/bin/proxy \
+            s3://${{ env.S3_BUCKET }}/examples/nitro/${{ matrix.example }}/proxy-${COMMIT_SHA} \
+            --metadata "example=${{ matrix.example }},commit=${COMMIT_SHA},branch=${BRANCH},timestamp=$(date -u +%Y-%m-%dT%H:%M:%SZ)"
+          
+          if [ -n "${{ env.VERSION }}" ]; then
+            aws s3 cp ./proxy/bin/proxy \
+              s3://${{ env.S3_BUCKET }}/examples/nitro/${{ matrix.example }}/proxy-${VERSION} \
+              --metadata "example=${{ matrix.example }},commit=${COMMIT_SHA},branch=${BRANCH},version=${VERSION},timestamp=$(date -u +%Y-%m-%dT%H:%M:%SZ)"
+          fi
 
 #  build-sev-snp:
 #    name: Build AMD SEV-SNP Images
@@ -220,127 +423,3 @@ jobs:
 #            --build-arg CONFIG_FILE=${{ env.CONFIG_FILE }} \
 #            --push \
 #            .
-
-  build-nitro:
-    name: Build AWS Nitro EIFs
-    needs: build-binaries
-    runs-on: ubuntu-latest
-    permissions:
-      id-token: write
-      contents: read
-    strategy:
-      fail-fast: false
-      matrix:
-        example: [hello-world]
-    env:
-      AWS_REGION: us-east-2
-      S3_BUCKET: bearclave
-    steps:
-      - name: Checkout Bearclave Examples
-        uses: actions/checkout@v6
-        with:
-          fetch-depth: 0
-          fetch-tags: true
-
-      - name: Configure AWS Credentials
-        uses: aws-actions/configure-aws-credentials@v4
-        with:
-          role-to-assume: arn:aws:iam::480429191343:role/GitHub_Actions_Bearclave
-          aws-region: ${{ env.AWS_REGION }}
-
-      - name: Install Docker
-        uses: docker/setup-buildx-action@v3
-
-      - name: Restore Cached Binaries
-        uses: actions/cache@v4
-        with:
-          path: |
-            ${{ matrix.example }}/enclave/bin
-            ${{ matrix.example }}/proxy/bin
-          key: binaries-${{ matrix.example }}-${{ github.sha }}
-
-      - name: Generate Artifact Tags
-        id: tags
-        run: |
-          # Get branch name, replacing '/' with '-' for valid S3 key
-          BRANCH_NAME=$(echo "${{ github.ref_name }}" | sed 's/\//-/g')
-          echo "branch=${BRANCH_NAME}" >> $GITHUB_OUTPUT
-          
-          COMMIT_SHA=$(git rev-parse --short HEAD)
-          echo "commit_sha=${COMMIT_SHA}" >> $GITHUB_OUTPUT
-          
-          # Get version from git tag (if it exists)
-          VERSION=$(git describe --tags --exact-match 2>/dev/null || echo "")
-          echo "version=${VERSION}" >> $GITHUB_OUTPUT
-          
-          echo "Branch: ${BRANCH_NAME}"
-          echo "Commit SHA: ${COMMIT_SHA}"
-          echo "Version: ${VERSION}"
-
-#      - name: Build ${{ matrix.example }} Nitro Docker Image
-#        working-directory: ${{ matrix.example }}
-#        run: |
-#          docker build \
-#            -f ./nitro.Dockerfile \
-#            -t ${{ matrix.example }}-enclave-nitro:latest \
-#            --build-arg CONFIG_FILE=configs/enclave/nitro.yaml \
-#            .
-
-#      - name: Build ${{ matrix.example }} Nitro EIF
-#        working-directory: ${{ matrix.example }}
-#        run: |
-#          nitro-cli build-enclave \
-#            --docker-uri ${{ matrix.example }}-enclave-nitro:latest \
-#            --output-file ./enclave.eif
-#
-#      - name: Upload EIF to S3
-#        working-directory: ${{ matrix.example }}
-#        env:
-#          BRANCH: ${{ steps.tags.outputs.branch }}
-#          COMMIT_SHA: ${{ steps.tags.outputs.commit_sha }}
-#          VERSION: ${{ steps.tags.outputs.version }}
-#        run: |
-#          # Upload EIF with multiple tags
-#          aws s3 cp ./enclave.eif \
-#            s3://${{ env.S3_BUCKET }}/nitro/${{ matrix.example }}/latest.eif \
-#            --metadata "example=${{ matrix.example }},commit=${COMMIT_SHA},branch=${BRANCH},timestamp=$(date -u +%Y-%m-%dT%H:%M:%SZ)"
-#
-#          aws s3 cp ./enclave.eif \
-#            s3://${{ env.S3_BUCKET }}/nitro/${{ matrix.example }}/${BRANCH}.eif \
-#            --metadata "example=${{ matrix.example }},commit=${COMMIT_SHA},branch=${BRANCH},timestamp=$(date -u +%Y-%m-%dT%H:%M:%SZ)"
-#
-#          aws s3 cp ./enclave.eif \
-#            s3://${{ env.S3_BUCKET }}/nitro/${{ matrix.example }}/${COMMIT_SHA}.eif \
-#            --metadata "example=${{ matrix.example }},commit=${COMMIT_SHA},branch=${BRANCH},timestamp=$(date -u +%Y-%m-%dT%H:%M:%SZ)"
-#
-#          if [ -n "${{ env.VERSION }}" ]; then
-#            aws s3 cp ./enclave.eif \
-#              s3://${{ env.S3_BUCKET }}/nitro/${{ matrix.example }}/${VERSION}.eif \
-#              --metadata "example=${{ matrix.example }},commit=${COMMIT_SHA},branch=${BRANCH},version=${VERSION},timestamp=$(date -u +%Y-%m-%dT%H:%M:%SZ)"
-#          fi
-
-      - name: Upload Proxy Binary to S3
-        working-directory: ${{ matrix.example }}
-        env:
-          BRANCH: ${{ steps.tags.outputs.branch }}
-          COMMIT_SHA: ${{ steps.tags.outputs.commit_sha }}
-          VERSION: ${{ steps.tags.outputs.version }}
-        run: |
-          # Upload proxy binary with multiple tags
-          aws s3 cp ./proxy/bin/proxy \
-            s3://${{ env.S3_BUCKET }}/examples/nitro/${{ matrix.example }}/proxy-latest \
-            --metadata "example=${{ matrix.example }},commit=${COMMIT_SHA},branch=${BRANCH},timestamp=$(date -u +%Y-%m-%dT%H:%M:%SZ)"
-          
-          aws s3 cp ./proxy/bin/proxy \
-            s3://${{ env.S3_BUCKET }}/examples/nitro/${{ matrix.example }}/proxy-${BRANCH} \
-            --metadata "example=${{ matrix.example }},commit=${COMMIT_SHA},branch=${BRANCH},timestamp=$(date -u +%Y-%m-%dT%H:%M:%SZ)"
-          
-          aws s3 cp ./proxy/bin/proxy \
-            s3://${{ env.S3_BUCKET }}/examples/nitro/${{ matrix.example }}/proxy-${COMMIT_SHA} \
-            --metadata "example=${{ matrix.example }},commit=${COMMIT_SHA},branch=${BRANCH},timestamp=$(date -u +%Y-%m-%dT%H:%M:%SZ)"
-          
-          if [ -n "${{ env.VERSION }}" ]; then
-            aws s3 cp ./proxy/bin/proxy \
-              s3://${{ env.S3_BUCKET }}/examples/nitro/${{ matrix.example }}/proxy-${VERSION} \
-              --metadata "example=${{ matrix.example }},commit=${COMMIT_SHA},branch=${BRANCH},version=${VERSION},timestamp=$(date -u +%Y-%m-%dT%H:%M:%SZ)"
-          fi
