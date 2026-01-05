@@ -20,7 +20,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        example: [hello-world, hello-http, hello-cel, hello-expr]
+        example: [hello-world]
     env:
       GCP_PROJECT_ID: bearclave
       GCP_REGION: us-east1
@@ -112,7 +112,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        example: [hello-world, hello-http, hello-cel, hello-expr]
+        example: [hello-world]
     env:
       GCP_PROJECT_ID: bearclave
       GCP_REGION: us-east1
