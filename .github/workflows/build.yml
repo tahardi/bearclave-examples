@@ -247,182 +247,182 @@ jobs:
               --metadata "example=${{ matrix.example }},commit=${COMMIT_SHA},branch=${BRANCH},version=${VERSION},timestamp=$(date -u +%Y-%m-%dT%H:%M:%SZ)"
           fi
 
-#  build-sev-snp:
-#    name: Build AMD SEV-SNP Images
-#    needs: build-binaries
-#    runs-on: ubuntu-latest
-#    permissions:
-#      id-token: write
-#      contents: read
-#    strategy:
-#      fail-fast: false
-#      matrix:
-#        example: [hello-world, hello-http, hello-expr, hello-cel]
-#    env:
-#      GCP_PROJECT_ID: bearclave
-#      GCP_REGION: us-east1
-#      GCP_ARTIFACT_REGISTRY: us-east1-docker.pkg.dev/bearclave/bearclave
-#    steps:
-#      - name: Checkout Bearclave Examples
-#        uses: actions/checkout@v6
-#        with:
-#          fetch-depth: 0
-#          fetch-tags: true
-#
-#      - name: Get OIDC Token for GCP
-#        uses: google-github-actions/auth@v3
-#        with:
-#          workload_identity_provider: "projects/403490793521/locations/global/workloadIdentityPools/bearclave-github/providers/github"
-#          service_account: "bearclave-github@bearclave.iam.gserviceaccount.com"
-#
-#      - name: Install Docker
-#        uses: docker/setup-buildx-action@v3
-#
-#      - name: Install GCP CLI
-#        uses: google-github-actions/setup-gcloud@v3
-#
-#      - name: Configure Docker to Use GCP Artifact Registry
-#        run: |
-#          gcloud auth configure-docker ${{ env.GCP_REGION }}-docker.pkg.dev
-#
-#      - name: Restore Cached Binaries
-#        uses: actions/cache@v4
-#        with:
-#          path: |
-#            ${{ matrix.example }}/enclave/bin
-#            ${{ matrix.example }}/proxy/bin
-#          key: binaries-${{ matrix.example }}-${{ github.sha }}
-#
-#      - name: Generate Image Tags
-#        id: tags
-#        run: |
-#          # Get branch name, replacing '/' with '-' for valid Docker tag
-#          BRANCH_NAME=$(echo "${{ github.ref_name }}" | sed 's/\//-/g')
-#          echo "branch=${BRANCH_NAME}" >> $GITHUB_OUTPUT
-#
-#          COMMIT_SHA=$(git rev-parse --short HEAD)
-#          echo "commit_sha=${COMMIT_SHA}" >> $GITHUB_OUTPUT
-#
-#          # Get version from git tag (if it exists)
-#          VERSION=$(git describe --tags --exact-match 2>/dev/null || echo "")
-#          echo "version=${VERSION}" >> $GITHUB_OUTPUT
-#
-#          echo "Branch: ${BRANCH_NAME}"
-#          echo "Commit SHA: ${COMMIT_SHA}"
-#          echo "Version: ${VERSION}"
-#
-#      - name: Build and Push ${{ matrix.example }} SEV-SNP Image
-#        working-directory: ${{ matrix.example }}
-#        env:
-#          CONFIG_FILE: configs/enclave/sev.yaml
-#          DOCKER_FILE: ./sev.Dockerfile
-#          IMAGE_NAME: ${{ matrix.example }}-enclave-sev
-#          IMAGE_REGISTRY: ${{ env.GCP_ARTIFACT_REGISTRY }}/${{ matrix.example }}-enclave-sev
-#          BRANCH: ${{ steps.tags.outputs.branch }}
-#          COMMIT_SHA: ${{ steps.tags.outputs.commit_sha }}
-#          VERSION: ${{ steps.tags.outputs.version }}
-#        run: |
-#          TAGS="-t ${{ env.IMAGE_REGISTRY }}:latest"
-#          TAGS="$TAGS -t ${{ env.IMAGE_REGISTRY }}:${{ env.BRANCH }}"
-#          TAGS="$TAGS -t ${{ env.IMAGE_REGISTRY }}:${{ env.COMMIT_SHA }}"
-#
-#          if [ -n "${{ env.VERSION }}" ]; then
-#            TAGS="$TAGS -t ${{ env.IMAGE_REGISTRY }}:${{ env.VERSION }}"
-#          fi
-#
-#          docker buildx build \
-#            -f ${{ env.DOCKER_FILE }} \
-#            $TAGS \
-#            --build-arg CONFIG_FILE=${{ env.CONFIG_FILE }} \
-#            --push \
-#            .
-#
-#  build-tdx:
-#    name: Build Intel TDX Images
-#    needs: build-binaries
-#    runs-on: ubuntu-latest
-#    permissions:
-#      id-token: write
-#      contents: read
-#    strategy:
-#      fail-fast: false
-#      matrix:
-#        example: [hello-world, hello-http, hello-expr, hello-cel]
-#    env:
-#      GCP_PROJECT_ID: bearclave
-#      GCP_REGION: us-east1
-#      GCP_ARTIFACT_REGISTRY: us-east1-docker.pkg.dev/bearclave/bearclave
-#    steps:
-#      - name: Checkout Bearclave Examples
-#        uses: actions/checkout@v6
-#        with:
-#          fetch-depth: 0
-#          fetch-tags: true
-#
-#      - name: Get OIDC Token for GCP
-#        uses: google-github-actions/auth@v3
-#        with:
-#          workload_identity_provider: "projects/403490793521/locations/global/workloadIdentityPools/bearclave-github/providers/github"
-#          service_account: "bearclave-github@bearclave.iam.gserviceaccount.com"
-#
-#      - name: Install Docker
-#        uses: docker/setup-buildx-action@v3
-#
-#      - name: Install GCP CLI
-#        uses: google-github-actions/setup-gcloud@v3
-#
-#      - name: Configure Docker to Use GCP Artifact Registry
-#        run: |
-#          gcloud auth configure-docker ${{ env.GCP_REGION }}-docker.pkg.dev
-#
-#      - name: Restore Cached Binaries
-#        uses: actions/cache@v4
-#        with:
-#          path: |
-#            ${{ matrix.example }}/enclave/bin
-#            ${{ matrix.example }}/proxy/bin
-#          key: binaries-${{ matrix.example }}-${{ github.sha }}
-#
-#      - name: Generate Image Tags
-#        id: tags
-#        run: |
-#          # Get branch name, replacing '/' with '-' for valid Docker tag
-#          BRANCH_NAME=$(echo "${{ github.ref_name }}" | sed 's/\//-/g')
-#          echo "branch=${BRANCH_NAME}" >> $GITHUB_OUTPUT
-#
-#          COMMIT_SHA=$(git rev-parse --short HEAD)
-#          echo "commit_sha=${COMMIT_SHA}" >> $GITHUB_OUTPUT
-#
-#          # Get version from git tag (if it exists)
-#          VERSION=$(git describe --tags --exact-match 2>/dev/null || echo "")
-#          echo "version=${VERSION}" >> $GITHUB_OUTPUT
-#
-#          echo "Branch: ${BRANCH_NAME}"
-#          echo "Commit SHA: ${COMMIT_SHA}"
-#          echo "Version: ${VERSION}"
-#
-#      - name: Build and Push ${{ matrix.example }} TDX Image
-#        working-directory: ${{ matrix.example }}
-#        env:
-#          CONFIG_FILE: configs/enclave/tdx.yaml
-#          DOCKER_FILE: ./tdx.Dockerfile
-#          IMAGE_NAME: ${{ matrix.example }}-enclave-tdx
-#          IMAGE_REGISTRY: ${{ env.GCP_ARTIFACT_REGISTRY }}/${{ matrix.example }}-enclave-tdx
-#          BRANCH: ${{ steps.tags.outputs.branch }}
-#          COMMIT_SHA: ${{ steps.tags.outputs.commit_sha }}
-#          VERSION: ${{ steps.tags.outputs.version }}
-#        run: |
-#          TAGS="-t ${{ env.IMAGE_REGISTRY }}:latest"
-#          TAGS="$TAGS -t ${{ env.IMAGE_REGISTRY }}:${{ env.BRANCH }}"
-#          TAGS="$TAGS -t ${{ env.IMAGE_REGISTRY }}:${{ env.COMMIT_SHA }}"
-#
-#          if [ -n "${{ env.VERSION }}" ]; then
-#            TAGS="$TAGS -t ${{ env.IMAGE_REGISTRY }}:${{ env.VERSION }}"
-#          fi
-#
-#          docker buildx build \
-#            -f ${{ env.DOCKER_FILE }} \
-#            $TAGS \
-#            --build-arg CONFIG_FILE=${{ env.CONFIG_FILE }} \
-#            --push \
-#            .
+  build-sev-snp:
+    name: Build AMD SEV-SNP Images
+    needs: build-binaries
+    runs-on: ubuntu-latest
+    permissions:
+      id-token: write
+      contents: read
+    strategy:
+      fail-fast: false
+      matrix:
+        example: [hello-world, hello-http, hello-expr, hello-cel]
+    env:
+      GCP_PROJECT_ID: bearclave
+      GCP_REGION: us-east1
+      GCP_ARTIFACT_REGISTRY: us-east1-docker.pkg.dev/bearclave/bearclave
+    steps:
+      - name: Checkout Bearclave Examples
+        uses: actions/checkout@v6
+        with:
+          fetch-depth: 0
+          fetch-tags: true
+
+      - name: Get OIDC Token for GCP
+        uses: google-github-actions/auth@v3
+        with:
+          workload_identity_provider: "projects/403490793521/locations/global/workloadIdentityPools/bearclave-github/providers/github"
+          service_account: "bearclave-github@bearclave.iam.gserviceaccount.com"
+
+      - name: Install Docker
+        uses: docker/setup-buildx-action@v3
+
+      - name: Install GCP CLI
+        uses: google-github-actions/setup-gcloud@v3
+
+      - name: Configure Docker to Use GCP Artifact Registry
+        run: |
+          gcloud auth configure-docker ${{ env.GCP_REGION }}-docker.pkg.dev
+
+      - name: Restore Cached Binaries
+        uses: actions/cache@v4
+        with:
+          path: |
+            ${{ matrix.example }}/enclave/bin
+            ${{ matrix.example }}/proxy/bin
+          key: binaries-${{ matrix.example }}-${{ github.sha }}
+
+      - name: Generate Image Tags
+        id: tags
+        run: |
+          # Get branch name, replacing '/' with '-' for valid Docker tag
+          BRANCH_NAME=$(echo "${{ github.ref_name }}" | sed 's/\//-/g')
+          echo "branch=${BRANCH_NAME}" >> $GITHUB_OUTPUT
+
+          COMMIT_SHA=$(git rev-parse --short HEAD)
+          echo "commit_sha=${COMMIT_SHA}" >> $GITHUB_OUTPUT
+
+          # Get version from git tag (if it exists)
+          VERSION=$(git describe --tags --exact-match 2>/dev/null || echo "")
+          echo "version=${VERSION}" >> $GITHUB_OUTPUT
+
+          echo "Branch: ${BRANCH_NAME}"
+          echo "Commit SHA: ${COMMIT_SHA}"
+          echo "Version: ${VERSION}"
+
+      - name: Build and Push ${{ matrix.example }} SEV-SNP Image
+        working-directory: ${{ matrix.example }}
+        env:
+          CONFIG_FILE: configs/enclave/sev.yaml
+          DOCKER_FILE: ./sev.Dockerfile
+          IMAGE_NAME: ${{ matrix.example }}-enclave-sev
+          IMAGE_REGISTRY: ${{ env.GCP_ARTIFACT_REGISTRY }}/${{ matrix.example }}-enclave-sev
+          BRANCH: ${{ steps.tags.outputs.branch }}
+          COMMIT_SHA: ${{ steps.tags.outputs.commit_sha }}
+          VERSION: ${{ steps.tags.outputs.version }}
+        run: |
+          TAGS="-t ${{ env.IMAGE_REGISTRY }}:latest"
+          TAGS="$TAGS -t ${{ env.IMAGE_REGISTRY }}:${{ env.BRANCH }}"
+          TAGS="$TAGS -t ${{ env.IMAGE_REGISTRY }}:${{ env.COMMIT_SHA }}"
+
+          if [ -n "${{ env.VERSION }}" ]; then
+            TAGS="$TAGS -t ${{ env.IMAGE_REGISTRY }}:${{ env.VERSION }}"
+          fi
+
+          docker buildx build \
+            -f ${{ env.DOCKER_FILE }} \
+            $TAGS \
+            --build-arg CONFIG_FILE=${{ env.CONFIG_FILE }} \
+            --push \
+            .
+
+  build-tdx:
+    name: Build Intel TDX Images
+    needs: build-binaries
+    runs-on: ubuntu-latest
+    permissions:
+      id-token: write
+      contents: read
+    strategy:
+      fail-fast: false
+      matrix:
+        example: [hello-world, hello-http, hello-expr, hello-cel]
+    env:
+      GCP_PROJECT_ID: bearclave
+      GCP_REGION: us-east1
+      GCP_ARTIFACT_REGISTRY: us-east1-docker.pkg.dev/bearclave/bearclave
+    steps:
+      - name: Checkout Bearclave Examples
+        uses: actions/checkout@v6
+        with:
+          fetch-depth: 0
+          fetch-tags: true
+
+      - name: Get OIDC Token for GCP
+        uses: google-github-actions/auth@v3
+        with:
+          workload_identity_provider: "projects/403490793521/locations/global/workloadIdentityPools/bearclave-github/providers/github"
+          service_account: "bearclave-github@bearclave.iam.gserviceaccount.com"
+
+      - name: Install Docker
+        uses: docker/setup-buildx-action@v3
+
+      - name: Install GCP CLI
+        uses: google-github-actions/setup-gcloud@v3
+
+      - name: Configure Docker to Use GCP Artifact Registry
+        run: |
+          gcloud auth configure-docker ${{ env.GCP_REGION }}-docker.pkg.dev
+
+      - name: Restore Cached Binaries
+        uses: actions/cache@v4
+        with:
+          path: |
+            ${{ matrix.example }}/enclave/bin
+            ${{ matrix.example }}/proxy/bin
+          key: binaries-${{ matrix.example }}-${{ github.sha }}
+
+      - name: Generate Image Tags
+        id: tags
+        run: |
+          # Get branch name, replacing '/' with '-' for valid Docker tag
+          BRANCH_NAME=$(echo "${{ github.ref_name }}" | sed 's/\//-/g')
+          echo "branch=${BRANCH_NAME}" >> $GITHUB_OUTPUT
+
+          COMMIT_SHA=$(git rev-parse --short HEAD)
+          echo "commit_sha=${COMMIT_SHA}" >> $GITHUB_OUTPUT
+
+          # Get version from git tag (if it exists)
+          VERSION=$(git describe --tags --exact-match 2>/dev/null || echo "")
+          echo "version=${VERSION}" >> $GITHUB_OUTPUT
+
+          echo "Branch: ${BRANCH_NAME}"
+          echo "Commit SHA: ${COMMIT_SHA}"
+          echo "Version: ${VERSION}"
+
+      - name: Build and Push ${{ matrix.example }} TDX Image
+        working-directory: ${{ matrix.example }}
+        env:
+          CONFIG_FILE: configs/enclave/tdx.yaml
+          DOCKER_FILE: ./tdx.Dockerfile
+          IMAGE_NAME: ${{ matrix.example }}-enclave-tdx
+          IMAGE_REGISTRY: ${{ env.GCP_ARTIFACT_REGISTRY }}/${{ matrix.example }}-enclave-tdx
+          BRANCH: ${{ steps.tags.outputs.branch }}
+          COMMIT_SHA: ${{ steps.tags.outputs.commit_sha }}
+          VERSION: ${{ steps.tags.outputs.version }}
+        run: |
+          TAGS="-t ${{ env.IMAGE_REGISTRY }}:latest"
+          TAGS="$TAGS -t ${{ env.IMAGE_REGISTRY }}:${{ env.BRANCH }}"
+          TAGS="$TAGS -t ${{ env.IMAGE_REGISTRY }}:${{ env.COMMIT_SHA }}"
+
+          if [ -n "${{ env.VERSION }}" ]; then
+            TAGS="$TAGS -t ${{ env.IMAGE_REGISTRY }}:${{ env.VERSION }}"
+          fi
+
+          docker buildx build \
+            -f ${{ env.DOCKER_FILE }} \
+            $TAGS \
+            --build-arg CONFIG_FILE=${{ env.CONFIG_FILE }} \
+            --push \
+            .
