@@ -51,7 +51,7 @@ jobs:
     name: Build nitro-cli Docker Image
     runs-on: ubuntu-latest
     env:
-      NITRO_CLI_VERSION: v1.4.3
+      NITRO_CLI_VERSION: v1.4.2
       REGISTRY: ghcr.io
       IMAGE_NAME: nitro-cli-builder
     outputs:
