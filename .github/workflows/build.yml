@@ -65,6 +65,12 @@ jobs:
           echo "Commit SHA: ${COMMIT_SHA}"
           echo "Version: ${VERSION}"
 
+      - name: Build Enclave & Proxy Go Binaries
+        working-directory: ${{ matrix.example }}
+        run: |
+          make enclave
+          make proxy
+
       - name: Build and Push ${{ matrix.example }} SEV-SNP Image
         working-directory: ${{ matrix.example }}
         env:
@@ -144,6 +150,12 @@ jobs:
           echo "Branch: ${BRANCH_NAME}"
           echo "Commit SHA: ${COMMIT_SHA}"
           echo "Version: ${VERSION}"
+
+      - name: Build Enclave & Proxy Go Binaries
+        working-directory: ${{ matrix.example }}
+        run: |
+          make enclave
+          make proxy
 
       - name: Build and Push ${{ matrix.example }} TDX Image
         working-directory: ${{ matrix.example }}
