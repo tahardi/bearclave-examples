@@ -59,13 +59,15 @@ jobs:
             --filter="status=RUNNING" \
             --format="value(name)")
           
-          # Trim newlines and convert to space-separated format
-          INSTANCE_NAMES=$(echo $INSTANCE_NAMES | tr '\n' ' ')
+          # Trim newlines and convert to space-separated format. Use xargs to
+          # trim whitespace so that INSTANCE_NAMES correctly evaluates as
+          # empty if all it contains is whitespace.
+          INSTANCE_NAMES=$(echo $INSTANCE_NAMES | tr '\n' ' ' | xargs)
           
           if [ -z "$INSTANCE_NAMES" ]; then
             echo "No running instances found."
           else
             echo "Stopping instances: $INSTANCE_NAMES"
-            gcloud compute instances stop $INSTANCE_NAMES --zone=us-central1-a
+            gcloud compute instances stop "$INSTANCE_NAMES" --zone=us-central1-a
             echo "Stop command sent successfully."
           fi
