@@ -204,20 +204,20 @@ jobs:
         run: |
           # Upload EIF with multiple tags
           aws s3 cp ./enclave.eif \
-            s3://${{ env.S3_BUCKET }}/examples/nitro/${{ matrix.example }}/latest.eif \
+            s3://${{ env.S3_BUCKET }}/examples/nitro/${{ matrix.example }}/enclave-latest.eif \
             --metadata "example=${{ matrix.example }},commit=${COMMIT_SHA},branch=${BRANCH},timestamp=$(date -u +%Y-%m-%dT%H:%M:%SZ)"
 
           aws s3 cp ./enclave.eif \
-            s3://${{ env.S3_BUCKET }}/examples/nitro/${{ matrix.example }}/${BRANCH}.eif \
+            s3://${{ env.S3_BUCKET }}/examples/nitro/${{ matrix.example }}/enclave-${BRANCH}.eif \
             --metadata "example=${{ matrix.example }},commit=${COMMIT_SHA},branch=${BRANCH},timestamp=$(date -u +%Y-%m-%dT%H:%M:%SZ)"
 
           aws s3 cp ./enclave.eif \
-            s3://${{ env.S3_BUCKET }}/examples/nitro/${{ matrix.example }}/${COMMIT_SHA}.eif \
+            s3://${{ env.S3_BUCKET }}/examples/nitro/${{ matrix.example }}/enclave-${COMMIT_SHA}.eif \
             --metadata "example=${{ matrix.example }},commit=${COMMIT_SHA},branch=${BRANCH},timestamp=$(date -u +%Y-%m-%dT%H:%M:%SZ)"
 
           if [ -n "${{ env.VERSION }}" ]; then
             aws s3 cp ./enclave.eif \
-              s3://${{ env.S3_BUCKET }}/examples/nitro/${{ matrix.example }}/${VERSION}.eif \
+              s3://${{ env.S3_BUCKET }}/examples/nitro/${{ matrix.example }}/enclave-${VERSION}.eif \
               --metadata "example=${{ matrix.example }},commit=${COMMIT_SHA},branch=${BRANCH},version=${VERSION},timestamp=$(date -u +%Y-%m-%dT%H:%M:%SZ)"
           fi
 
