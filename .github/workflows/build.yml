@@ -17,7 +17,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        example: [hello-world]
+        example: [hello-world, hello-http, hello-expr, hello-cel]
     steps:
       - name: Checkout Bearclave Examples
         uses: actions/checkout@v6
@@ -141,7 +141,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        example: [hello-world]
+        example: [hello-world, hello-http, hello-expr, hello-cel]
     env:
       GCP_PROJECT_ID: bearclave
       GCP_REGION: us-east1
