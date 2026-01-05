@@ -50,6 +50,9 @@ jobs:
   build-nitro-cli-image:
     name: Build nitro-cli Docker Image
     runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      packages: write
     env:
       NITRO_CLI_VERSION: 1.4.0
       REGISTRY: ghcr.io
@@ -67,15 +70,14 @@ jobs:
       - name: Check if Image Tag Exists
         id: check-image
         run: |
-          IMAGE_URI="${{ env.REGISTRY }}/${{ github.repository }}/${{ env.IMAGE_NAME }}:${{ env.NITRO_CLI_VERSION }}"
+          # Ensure consistent path format
+          IMAGE_URI="${{ env.REGISTRY }}/${{ github.repository }}/nitro-cli-builder:${{ env.NITRO_CLI_VERSION }}"
           if docker pull $IMAGE_URI 2>/dev/null; then
             echo "exists=true" >> $GITHUB_OUTPUT
             echo "image-uri=${IMAGE_URI}" >> $GITHUB_OUTPUT
-            echo "Image ${{ env.NITRO_CLI_VERSION }} already exists in registry"
           else
             echo "exists=false" >> $GITHUB_OUTPUT
             echo "image-uri=${IMAGE_URI}" >> $GITHUB_OUTPUT
-            echo "Image ${{ env.NITRO_CLI_VERSION }} not found, will build"
           fi
 
       - name: Build nitro-cli Container
