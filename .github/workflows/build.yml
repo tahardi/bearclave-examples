@@ -217,14 +217,14 @@ jobs:
             --key examples/nitro/${{ matrix.example }}/enclave-${BRANCH}.eif \
             --body ./enclave.eif \
             --metadata "example=${{ matrix.example }},commit=${COMMIT_SHA},branch=${BRANCH},timestamp=$(date -u +%Y-%m-%dT%H:%M:%SZ)" \
-            --tagging 'preserve=true'
+            --tagging 'preserve=false'
 
           aws s3api put-object \
             --bucket ${{ env.S3_BUCKET }} \
             --key examples/nitro/${{ matrix.example }}/enclave-${COMMIT_SHA}.eif \
             --body ./enclave.eif \
             --metadata "example=${{ matrix.example }},commit=${COMMIT_SHA},branch=${BRANCH},timestamp=$(date -u +%Y-%m-%dT%H:%M:%SZ)" \
-            --tagging 'preserve=true'
+            --tagging 'preserve=false'
     
           if [ -n "${{ env.VERSION }}" ]; then
             aws s3api put-object \
