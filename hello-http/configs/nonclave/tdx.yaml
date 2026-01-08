@@ -1,6 +1,5 @@
 platform: "tdx"
 nonclave:
-  route: "app/v1"
   measurement: |
     {
       "tee_tcb_svn": "CAEIAAAAAAAAAAAAAAAAAA==",

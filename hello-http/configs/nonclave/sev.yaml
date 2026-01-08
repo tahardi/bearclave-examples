@@ -1,6 +1,5 @@
 platform: "sev"
 nonclave:
-  route: "app/v1"
   measurement: |
     {
       "version": 5,

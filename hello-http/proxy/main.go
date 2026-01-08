@@ -39,11 +39,10 @@ func main() {
 	inCtx, inCancel := context.WithTimeout(context.Background(), DefaultTimeout)
 	defer inCancel()
 
-	// TODO: Update proxy config to have Reverse and Proxy addrs
 	revProxy, err := tee.NewReverseProxy(
 		inCtx,
 		config.Platform,
-		config.Proxy.InAddr,
+		config.Proxy.RevAddr,
 		config.Enclave.Addr,
 		logger,
 	)
@@ -60,7 +59,7 @@ func main() {
 	proxy, err := tee.NewProxy(
 		outCtx,
 		config.Platform,
-		config.Proxy.OutAddr,
+		config.Proxy.Addr,
 		forwardingClient,
 		logger,
 	)
