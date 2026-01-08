@@ -18,11 +18,14 @@ type Config struct {
 
 type Enclave struct {
 	Addr    string `mapstructure:"addr"`
+	AddrTLS string `mapstructure:"addr_tls"`
 }
 
 type Proxy struct {
-	InAddr  string `mapstructure:"in_addr"`
-	OutAddr string `mapstructure:"out_addr"`
+	Addr       string `mapstructure:"addr"`
+	AddrTLS    string `mapstructure:"addr_tls"`
+	RevAddr    string `mapstructure:"rev_addr"`
+	RevAddrTLS string `mapstructure:"rev_addr_tls"`
 }
 
 type Nonclave struct {
