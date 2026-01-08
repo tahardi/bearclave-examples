@@ -99,7 +99,7 @@ Expr engine.
 ```go
 func main() {
 	// ...
-	client, err := tee.NewProxiedClient(config.Platform, config.Proxy.OutAddr)
+	client, err := tee.NewProxiedClient(config.Platform, config.Proxy.Addr)
 	if err != nil {
 		logger.Error("making proxied client", slog.String("error", err.Error()))
 		return
