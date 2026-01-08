@@ -36,11 +36,11 @@ func main() {
 	}
 	logger.Info("loaded config", slog.Any(configFile, config))
 
-	inCtx, inCancel := context.WithTimeout(context.Background(), DefaultTimeout)
-	defer inCancel()
+	revCtx, revCancel := context.WithTimeout(context.Background(), DefaultTimeout)
+	defer revCancel()
 
 	revProxy, err := tee.NewReverseProxy(
-		inCtx,
+		revCtx,
 		config.Platform,
 		config.Proxy.RevAddr,
 		config.Enclave.Addr,
@@ -52,12 +52,12 @@ func main() {
 	}
 	defer revProxy.Close()
 
-	outCtx, outCancel := context.WithTimeout(context.Background(), DefaultTimeout)
-	defer outCancel()
+	proxyCtx, proxyCancel := context.WithTimeout(context.Background(), DefaultTimeout)
+	defer proxyCancel()
 
 	forwardingClient := &http.Client{Timeout: DefaultTimeout}
 	proxy, err := tee.NewProxy(
-		outCtx,
+		proxyCtx,
 		config.Platform,
 		config.Proxy.Addr,
 		forwardingClient,

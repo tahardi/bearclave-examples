@@ -8,13 +8,14 @@ other TEE concepts, refer to the Bearclave SDK
 ## Walkthrough
 
 The scenario is as follows: a Nonclave client wants an Enclave to make an HTTP
-call on their behalf and to attest to the response. Since we do not have
-direct access to the Enclave, we need to configure the Proxy to forward our
-requests to the Enclave, as well as the Enclave's request that it makes on our
-behalf.
+call on their behalf and to attest to the response. Recall that we do not have
+direct access to the Enclave, so we need to configure a Proxy to forward 
+requests to the Enclave, as well as the Enclave's request that it makes on
+behalf of the Nonclave.
 
 1. The Nonclave uses our `networking.Client.AttestHTTPCall` convenience function
-to send an attest HTTP request to the Enclave.
+to send an attest HTTP request to the Enclave. In this case, the Nonclave wants
+the Enclave to make the call `GET http://httpbin.org/get`.
 
 <!-- pluck("function", "main", "hello-http/nonclave/main.go", 35, 45) -->
 ```go
@@ -34,68 +35,62 @@ func main() {
 }
 ```
 
-2. To handle our requests to the Enclave, the Proxy creates a reverse proxy
+2. To handle our requests to the Enclave, the Proxy creates a `tee.ReverseProxy`
 server that forwards requests to the Enclave. Recall that Nitro Enclaves have
 to communicate via virtual sockets. If our `config.Platform` specifies `nitro`,
 then the `tee.NewReverseProxy` function will create a reverse proxy server that
 listens for incoming requests on a normal socket, but forwards them to the
 Enclave via a virtual socket.
 
-<!-- pluck("function", "main", "hello-http/proxy/main.go", 17, 33) -->
+<!-- pluck("function", "main", "hello-http/proxy/main.go", 17, 32) -->
 ```go
 func main() {
 	// ...
-	inCtx, inCancel := context.WithTimeout(context.Background(), DefaultTimeout)
-	defer inCancel()
+	revCtx, revCancel := context.WithTimeout(context.Background(), DefaultTimeout)
+	defer revCancel()
 
-	inboundServer, err := tee.NewReverseProxy(
-		inCtx,
+	revProxy, err := tee.NewReverseProxy(
+		revCtx,
 		config.Platform,
-		config.Proxy.Network,
-		config.Proxy.InAddr,
+		config.Proxy.RevAddr,
 		config.Enclave.Addr,
-		config.Enclave.Route,
+		logger,
 	)
 	if err != nil {
 		logger.Error("making inbound server", slog.String("error", err.Error()))
 		return
 	}
-	defer inboundServer.Close()
+	defer revProxy.Close()
 	// ...
 }
 ```
 
-3. For handling the Enclave's outbound HTTP requests, the Proxy creates an
-HTTP server that uses the `tee.MakeForwardHTTPRequestHandler` function to
-copy and forward requests on behalf of the Enclave. Again, Nitro requires the
-use of virtual sockets. When running on Nitro, the Proxy `OutAddr` should be
-set to a virtual socket address (e.g., `http://3:8082`) instead of a standard
-address (e.g., `http://127.0.0.1:8082`).
+3. For handling the Enclave's outbound HTTP requests, the Proxy creates a
+`tee.Proxy` server that copies and makes the Enclave's request call. Again,
+Nitro requires the use of virtual sockets. When running on Nitro, the Proxy
+`Addr` should be set to a virtual socket address (e.g., `http://3:8082`)
+instead of a standard address (e.g., `http://127.0.0.1:8082`). This
 
-<!-- pluck("function", "main", "hello-http/proxy/main.go", 34, 54) -->
+<!-- pluck("function", "main", "hello-http/proxy/main.go", 33, 49) -->
 ```go
 func main() {
 	// ...
-	outCtx, outCancel := context.WithTimeout(context.Background(), DefaultTimeout)
-	defer outCancel()
+	proxyCtx, proxyCancel := context.WithTimeout(context.Background(), DefaultTimeout)
+	defer proxyCancel()
 
 	forwardingClient := &http.Client{Timeout: DefaultTimeout}
-	mux := http.NewServeMux()
-	mux.HandleFunc(
-		tee.ForwardPath,
-		tee.MakeForwardHTTPRequestHandler(forwardingClient, logger, DefaultTimeout),
-	)
-	outboundServer, err := tee.NewServer(
-		outCtx,
+	proxy, err := tee.NewProxy(
+		proxyCtx,
 		config.Platform,
-		config.Proxy.Network,
-		config.Proxy.OutAddr,
-		mux,
+		config.Proxy.Addr,
+		forwardingClient,
+		logger,
 	)
 	if err != nil {
 		logger.Error("making outbound server", slog.String("error", err.Error()))
 		return
 	}
+	defer proxy.Close()
 	// ...
 }
 ```
@@ -109,7 +104,7 @@ use a virtual socket as the transport instead of a normal one.
 ```go
 func main() {
 	// ...
-	client, err := tee.NewProxiedClient(config.Platform, config.Proxy.OutAddr)
+	client, err := tee.NewProxiedClient(config.Platform, config.Proxy.Addr)
 	if err != nil {
 		logger.Error("making proxied client", slog.String("error", err.Error()))
 		return
@@ -140,9 +135,9 @@ func main() {
 	server, err := tee.NewServer(
 		ctx,
 		config.Platform,
-		config.Enclave.Network,
 		config.Enclave.Addr,
 		serverMux,
+		logger,
 	)
 	if err != nil {
 		logger.Error("making server", slog.String("error", err.Error()))
