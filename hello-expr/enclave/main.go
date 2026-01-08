@@ -121,9 +121,9 @@ func main() {
 	server, err := tee.NewServer(
 		ctx,
 		config.Platform,
-		config.Enclave.Network,
 		config.Enclave.Addr,
 		serverMux,
+		logger,
 	)
 	if err != nil {
 		logger.Error("making server", slog.String("error", err.Error()))
@@ -131,7 +131,7 @@ func main() {
 	}
 
 	logger.Info("enclave server started", slog.String("addr", server.Addr()))
-	err = server.ListenAndServe()
+	err = server.Serve()
 	if err != nil {
 		logger.Error(
 			"enclave server error",

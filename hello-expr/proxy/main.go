@@ -36,54 +36,48 @@ func main() {
 	}
 	logger.Info("loaded config", slog.Any(configFile, config))
 
-	inCtx, inCancel := context.WithTimeout(context.Background(), DefaultTimeout)
-	defer inCancel()
-	inboundServer, err := tee.NewReverseProxy(
-		inCtx,
+	revCtx, revCancel := context.WithTimeout(context.Background(), DefaultTimeout)
+	defer revCancel()
+	revProxy, err := tee.NewReverseProxy(
+		revCtx,
 		config.Platform,
-		config.Proxy.Network,
 		config.Proxy.InAddr,
 		config.Enclave.Addr,
-		config.Enclave.Route,
+		logger,
 	)
 	if err != nil {
 		logger.Error("making inbound server", slog.String("error", err.Error()))
 		return
 	}
-	defer inboundServer.Close()
+	defer revProxy.Close()
 
-	outCtx, outCancel := context.WithTimeout(context.Background(), DefaultTimeout)
-	defer outCancel()
+	proxyCtx, proxyCancel := context.WithTimeout(context.Background(), DefaultTimeout)
+	defer proxyCancel()
 
 	forwardingClient := &http.Client{Timeout: DefaultTimeout}
-	mux := http.NewServeMux()
-	mux.HandleFunc(
-		tee.ForwardPath,
-		tee.MakeForwardHTTPRequestHandler(forwardingClient, logger, DefaultTimeout),
-	)
-	outboundServer, err := tee.NewServer(
-		outCtx,
+	proxy, err := tee.NewProxy(
+		proxyCtx,
 		config.Platform,
-		config.Proxy.Network,
 		config.Proxy.OutAddr,
-		mux,
+		forwardingClient,
+		logger,
 	)
 	if err != nil {
 		logger.Error("making outbound server", slog.String("error", err.Error()))
 		return
 	}
-	defer outboundServer.Close()
+	defer proxy.Close()
 
 	go func() {
 		logger.Info("proxy inbound server started")
-		err := inboundServer.ListenAndServe()
+		err := revProxy.Serve()
 		if err != nil && !errors.Is(err, http.ErrServerClosed) {
 			logger.Error("inbound server error", slog.String("error", err.Error()))
 		}
 	}()
 
 	logger.Info("proxy outbound server started")
-	err = outboundServer.ListenAndServe()
+	err = proxy.Serve()
 	if err != nil {
 		logger.Error("outbound server error", slog.String("error", err.Error()))
 	}
