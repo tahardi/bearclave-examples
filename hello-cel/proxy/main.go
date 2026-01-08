@@ -41,7 +41,7 @@ func main() {
 	revProxy, err := tee.NewReverseProxy(
 		revCtx,
 		config.Platform,
-		config.Proxy.InAddr,
+		config.Proxy.RevAddr,
 		config.Enclave.Addr,
 		logger,
 	)
@@ -58,7 +58,7 @@ func main() {
 	proxy, err := tee.NewProxy(
 		proxyCtx,
 		config.Platform,
-		config.Proxy.OutAddr,
+		config.Proxy.Addr,
 		forwardingClient,
 		logger,
 	)
