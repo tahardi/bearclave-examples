@@ -7,7 +7,7 @@ require (
 	github.com/google/cel-go v0.26.1
 	github.com/spf13/viper v1.21.0
 	github.com/stretchr/testify v1.11.1
-	github.com/tahardi/bearclave v0.1.1-0.20260102122820-3fc738efd483
+	github.com/tahardi/bearclave v0.1.1-0.20260108143300-3711bcd6e76f
 )
 
 require (
@@ -15,7 +15,7 @@ require (
 	github.com/antlr4-go/antlr/v4 v4.13.0 // indirect
 	github.com/davecgh/go-spew v1.1.2-0.20180830191138-d8f796af33cc // indirect
 	github.com/fsnotify/fsnotify v1.9.0 // indirect
-	github.com/fxamacker/cbor/v2 v2.2.0 // indirect
+	github.com/fxamacker/cbor/v2 v2.9.0 // indirect
 	github.com/go-viper/mapstructure/v2 v2.4.0 // indirect
 	github.com/google/go-configfs-tsm v0.2.2 // indirect
 	github.com/google/go-sev-guest v0.14.1 // indirect
