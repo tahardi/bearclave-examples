@@ -47,7 +47,7 @@ func main() {
 	socket, err := tee.NewSocket(
 		ctx,
 		config.Platform,
-		config.Enclave.Network,
+		tee.NetworkTCP,
 		config.Enclave.Addr,
 	)
 	if err != nil {

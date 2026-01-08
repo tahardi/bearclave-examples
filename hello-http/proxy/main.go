@@ -39,7 +39,6 @@ func main() {
 	inCtx, inCancel := context.WithTimeout(context.Background(), DefaultTimeout)
 	defer inCancel()
 
-	// TODO: Remove network from config
 	// TODO: Update proxy config to have Reverse and Proxy addrs
 	revProxy, err := tee.NewReverseProxy(
 		inCtx,

@@ -95,7 +95,7 @@ func main() {
 	socket, err := tee.NewSocket(
 		sockCtx,
 		config.Platform,
-		config.Proxy.Network,
+		tee.NetworkTCP,
 		config.Proxy.OutAddr,
 	)
 	if err != nil {

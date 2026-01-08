@@ -17,20 +17,16 @@ type Config struct {
 }
 
 type Enclave struct {
-	Network string `mapstructure:"network"`
 	Addr    string `mapstructure:"addr"`
-	Route   string `mapstructure:"route"`
 }
 
 type Proxy struct {
-	Network string `mapstructure:"network"`
 	InAddr  string `mapstructure:"in_addr"`
 	OutAddr string `mapstructure:"out_addr"`
 }
 
 type Nonclave struct {
 	Measurement string `mapstructure:"measurement"`
-	Route       string `mapstructure:"route"`
 }
 
 func LoadConfig(configFile string) (*Config, error) {
