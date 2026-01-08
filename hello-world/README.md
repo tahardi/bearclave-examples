@@ -23,9 +23,9 @@ and contains your business logic and data. As the program running within a TEE,
 the Enclave has certain properties and functionalities not afforded to "normal"
 programs. The confidentiality and integrity of the Enclave's code and data is
 assured, even in the face of a malicious Host OS or Hypervisor. The Enclave can
-_prove_ this to outside parties by generating attestation reports. As we will
+**prove** this to outside parties by generating attestation reports. As we will
 demonstrate in this example, attestation reports can also be used to "witness"
-arbitrary "user data". This is especially useful if you want to prove to some
+arbitrary data. This is especially useful if you want to prove to some
 other party that your Enclave program has seen or generated a given set of data.
 
 ### Proxy
@@ -105,7 +105,7 @@ func main() {
 
 3. Remember that the Proxy is responsible for forwarding requests and responses
 between the Enclave and the Nonclave. In this example, the Proxy configures
-a `tee.Socket` connection to the Enclave. On AWS Nitro, the underlying socket
+a TCP `tee.Socket` connection to the Enclave. On AWS Nitro, the underlying socket
 is actually a _virtual_ socket, whereas on AMD SEV-SNP and Intel TDX it is a
 traditional socket.
 
@@ -125,8 +125,8 @@ func main() {
 	socket, err := tee.NewSocket(
 		sockCtx,
 		config.Platform,
-		config.Proxy.Network,
-		config.Proxy.OutAddr,
+		tee.NetworkTCP,
+		config.Proxy.Addr,
 	)
 	if err != nil {
 		logger.Error("making socket", slog.String("error", err.Error()))
@@ -224,7 +224,7 @@ func main() {
 	socket, err := tee.NewSocket(
 		ctx,
 		config.Platform,
-		config.Enclave.Network,
+		tee.NetworkTCP,
 		config.Enclave.Addr,
 	)
 	// ...
@@ -277,7 +277,7 @@ func main() {
 		}
 
 		logger.Info("sending attestation to enclave-proxy...")
-		err = socket.Send(ctx, config.Proxy.OutAddr, attestBytes)
+		err = socket.Send(ctx, config.Proxy.Addr, attestBytes)
 		if err != nil {
 			logger.Error("sending attestation", slog.String("error", err.Error()))
 			return
