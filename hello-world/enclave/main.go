@@ -93,7 +93,7 @@ func main() {
 		}
 
 		logger.Info("sending attestation to enclave-proxy...")
-		err = socket.Send(ctx, config.Proxy.OutAddr, attestBytes)
+		err = socket.Send(ctx, config.Proxy.Addr, attestBytes)
 		if err != nil {
 			logger.Error("sending attestation", slog.String("error", err.Error()))
 			return

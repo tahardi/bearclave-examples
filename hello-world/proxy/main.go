@@ -96,7 +96,7 @@ func main() {
 		sockCtx,
 		config.Platform,
 		tee.NetworkTCP,
-		config.Proxy.OutAddr,
+		config.Proxy.Addr,
 	)
 	if err != nil {
 		logger.Error("making socket", slog.String("error", err.Error()))
@@ -114,7 +114,7 @@ func main() {
 	server, err := tee.NewServer(
 		servCtx,
 		tee.NoTEE,
-		config.Proxy.InAddr,
+		config.Proxy.RevAddr,
 		mux,
 		logger,
 	)

@@ -1,6 +1,5 @@
 platform: "nitro"
 nonclave:
-  route: "app/v1"
   measurement: |
     {
       "pcrs": {
