@@ -17,7 +17,7 @@ behalf of the Nonclave.
 to send an attest HTTP request to the Enclave. In this case, the Nonclave wants
 the Enclave to make the call `GET http://httpbin.org/get`.
 
-<!-- pluck("function", "main", "hello-http/nonclave/main.go", 35, 45) -->
+<!-- pluck("function", "main", "hello-http/nonclave/main.go", 35, 51) -->
 ```go
 func main() {
 	// ...
@@ -31,6 +31,12 @@ func main() {
 	defer cancel()
 
 	proxyURL := "http://" + net.JoinHostPort(host, strconv.Itoa(port))
+	client := networking.NewClient(proxyURL)
+	got, err := client.AttestHTTPCall(ctx, TargetMethod, TargetURL)
+	if err != nil {
+		logger.Error("attesting http call", slog.String("error", err.Error()))
+		return
+	}
 	// ...
 }
 ```
@@ -231,6 +237,5 @@ func main() {
 ## Next Steps
 
 You know now how to write HTTP servers and clients for cloud-based TEE platforms!
-Next, try out [Hello, Expr](../hello-expr/README.md) or
-[Hello, CEL](../hello-cel/README.md) to learn how to make an off-chain compute
-solution with TEEs.
+Next, try out [Hello, HTTPS](../hello-https/README.md) to learn how to write
+HTTPS servers and clients.
