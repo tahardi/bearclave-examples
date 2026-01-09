@@ -3,6 +3,8 @@ package networking
 import (
 	"bytes"
 	"context"
+	"crypto/tls"
+	"crypto/x509"
 	"encoding/json"
 	"errors"
 	"fmt"
@@ -36,6 +38,57 @@ func NewClientWithClient(
 	}
 }
 
+func (c *Client) AddCertChain(certChainJSON []byte) error {
+	chainDER := [][]byte{}
+	err := json.Unmarshal(certChainJSON, &chainDER)
+	if err != nil {
+		return fmt.Errorf("unmarshaling cert chain json: %w", err)
+	}
+
+	if c.client.Transport == nil {
+		c.client.Transport = &http.Transport{}
+	}
+	transport, ok := c.client.Transport.(*http.Transport)
+	if !ok {
+		return errors.New("transport is not an HTTP Transport")
+	}
+
+	if transport.TLSClientConfig == nil {
+		transport.TLSClientConfig = &tls.Config{MinVersion: tls.VersionTLS12}
+	}
+	if transport.TLSClientConfig.RootCAs == nil {
+		transport.TLSClientConfig.RootCAs = x509.NewCertPool()
+	}
+
+	for i, certBytes := range chainDER {
+		x509Cert, err := x509.ParseCertificate(certBytes)
+		if err != nil {
+			return fmt.Errorf("parsing chain %d: %w", i, err)
+		}
+		transport.TLSClientConfig.RootCAs.AddCert(x509Cert)
+	}
+	return nil
+}
+
+func (c *Client) AttestCertChain(
+	ctx context.Context,
+) (AttestCertResponse, error) {
+	attestCertReq := AttestCertRequest{}
+	attestCertResp := AttestCertResponse{}
+	err := c.Do(
+		ctx,
+		"POST",
+		AttestCertPath,
+		attestCertReq,
+		&attestCertResp,
+	)
+	if err != nil {
+		return AttestCertResponse{},
+			fmt.Errorf("doing attest cert request: %w", err)
+	}
+	return attestCertResp, nil
+}
+
 func (c *Client) AttestHTTPCall(
 	ctx context.Context,
 	method string,
@@ -55,6 +108,27 @@ func (c *Client) AttestHTTPCall(
 			fmt.Errorf("doing attest http call request: %w", err)
 	}
 	return attestHTTPCallResponse, nil
+}
+
+func (c *Client) AttestHTTPSCall(
+	ctx context.Context,
+	method string,
+	url string,
+) (AttestHTTPSCallResponse, error) {
+	attestHTTPSCallRequest := AttestHTTPSCallRequest{Method: method, URL: url}
+	attestHTTPSCallResponse := AttestHTTPSCallResponse{}
+	err := c.Do(
+		ctx,
+		"POST",
+		AttestHTTPSCallPath,
+		attestHTTPSCallRequest,
+		&attestHTTPSCallResponse,
+	)
+	if err != nil {
+		return AttestHTTPSCallResponse{},
+			fmt.Errorf("doing attest https call request: %w", err)
+	}
+	return attestHTTPSCallResponse, nil
 }
 
 func (c *Client) AttestCEL(
