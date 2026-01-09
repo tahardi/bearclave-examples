@@ -60,6 +60,8 @@ func (c *Client) AddCertChain(certChainJSON []byte) error {
 		transport.TLSClientConfig.RootCAs = x509.NewCertPool()
 	}
 
+	transport.TLSClientConfig.InsecureSkipVerify = true
+
 	for i, certBytes := range chainDER {
 		x509Cert, err := x509.ParseCertificate(certBytes)
 		if err != nil {
