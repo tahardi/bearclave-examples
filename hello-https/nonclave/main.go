@@ -104,7 +104,7 @@ func main() {
 	defer certCancel()
 	attestedCert, err := client.AttestCertChain(certCtx)
 	if err != nil {
-		logger.Error("attesting http call", slog.String("error", err.Error()))
+		logger.Error("attesting cert", slog.String("error", err.Error()))
 		return
 	}
 
@@ -117,7 +117,7 @@ func main() {
 		logger.Error("verifying cert attestation", slog.String("error", err.Error()))
 		return
 	}
-	logger.Info("verified attestation")
+	logger.Info("verified cert attestation")
 
 	proxyTLSURL := "https://" + net.JoinHostPort(host, strconv.Itoa(portTLS))
 	clientTLS := networking.NewClient(proxyTLSURL)
