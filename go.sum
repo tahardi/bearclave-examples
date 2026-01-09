@@ -73,6 +73,8 @@ github.com/tahardi/bearclave v0.1.1-0.20260108143300-3711bcd6e76f h1:ws2Kzv8xczJ
 github.com/tahardi/bearclave v0.1.1-0.20260108143300-3711bcd6e76f/go.mod h1:EipxBLuBa78yPN34u2PJHaIq13MpuZMA+WFPNlvPY/A=
 github.com/tahardi/bearclave v0.1.1-0.20260109132124-616d76d548c9 h1:6tGL3ggnj3XsCAQbK0QGJYNaK/hAsCgkQ8XIuArm7T4=
 github.com/tahardi/bearclave v0.1.1-0.20260109132124-616d76d548c9/go.mod h1:EipxBLuBa78yPN34u2PJHaIq13MpuZMA+WFPNlvPY/A=
+github.com/tahardi/bearclave v0.1.1-0.20260109135506-1a2faa139def h1:2Ohs+Xd2a0GBPT0XwzgS9LmrBhmQrHSPkH/ptl0Pwss=
+github.com/tahardi/bearclave v0.1.1-0.20260109135506-1a2faa139def/go.mod h1:EipxBLuBa78yPN34u2PJHaIq13MpuZMA+WFPNlvPY/A=
 github.com/x448/float16 v0.8.4 h1:qLwI1I70+NjRFUR3zs1JPUCgaCXSh3SW62uAKT1mSBM=
 github.com/x448/float16 v0.8.4/go.mod h1:14CWIYCyZA/cWjXOioeEpHeN/83MdbZDRQHoFcYsOfg=
 go.uber.org/multierr v1.11.0 h1:blXXJkSxSSfBVBlC76pxqeO+LN3aDfLQo+309xJstO0=
