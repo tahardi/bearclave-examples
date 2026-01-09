@@ -59,8 +59,12 @@ func (c *Client) AddCertChain(certChainJSON []byte, selfSigned bool) error {
 	if transport.TLSClientConfig.RootCAs == nil {
 		transport.TLSClientConfig.RootCAs = x509.NewCertPool()
 	}
+
+	// Disable hostname verification because our self-signed certs may not
+	// match the name of the instance they are deployed on. That said, we still
+	// perform signature verification by adding the certs to our RootCAs pool.
 	if selfSigned {
-		transport.TLSClientConfig.InsecureSkipVerify = true
+		transport.TLSClientConfig.ServerName = ""
 	}
 
 	for i, certBytes := range chainDER {
