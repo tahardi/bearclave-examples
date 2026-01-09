@@ -38,7 +38,7 @@ func NewClientWithClient(
 	}
 }
 
-func (c *Client) AddCertChain(certChainJSON []byte) error {
+func (c *Client) AddCertChain(certChainJSON []byte, selfSigned bool) error {
 	chainDER := [][]byte{}
 	err := json.Unmarshal(certChainJSON, &chainDER)
 	if err != nil {
@@ -59,8 +59,9 @@ func (c *Client) AddCertChain(certChainJSON []byte) error {
 	if transport.TLSClientConfig.RootCAs == nil {
 		transport.TLSClientConfig.RootCAs = x509.NewCertPool()
 	}
-
-	transport.TLSClientConfig.InsecureSkipVerify = true
+	if selfSigned {
+		transport.TLSClientConfig.InsecureSkipVerify = true
+	}
 
 	for i, certBytes := range chainDER {
 		x509Cert, err := x509.ParseCertificate(certBytes)
