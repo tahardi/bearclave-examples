@@ -21,16 +21,16 @@ the Enclave to make the call `GET http://httpbin.org/get`.
 ```go
 func main() {
 	// ...
+	verifier, err := tee.NewVerifier(config.Platform)
+	if err != nil {
+		logger.Error("making verifier", slog.String("error", err.Error()))
+		return
+	}
+
 	ctx, cancel := context.WithTimeout(context.Background(), DefaultTimeout)
 	defer cancel()
 
 	proxyURL := "http://" + net.JoinHostPort(host, strconv.Itoa(port))
-	client := networking.NewClient(proxyURL)
-	got, err := client.AttestHTTPCall(ctx, TargetMethod, TargetURL)
-	if err != nil {
-		logger.Error("attesting http call", slog.String("error", err.Error()))
-		return
-	}
 	// ...
 }
 ```
@@ -162,16 +162,17 @@ func MakeAttestHTTPCallHandler(
 	logger *slog.Logger,
 ) http.HandlerFunc {
 	// ...
-		req, err := http.NewRequestWithContext(ctx, apiCallReq.Method, apiCallReq.URL, nil)
+
+		req, err := http.NewRequestWithContext(ctx, httpCallReq.Method, httpCallReq.URL, nil)
 		if err != nil {
 			WriteError(w, fmt.Errorf("creating request: %w", err))
 			return
 		}
 
 		logger.Info(
-			"making http call",
-			slog.String("method", apiCallReq.Method),
-			slog.String("url", apiCallReq.URL),
+			"making HTTP call",
+			slog.String("method", httpCallReq.Method),
+			slog.String("URL", httpCallReq.URL),
 		)
 		resp, err := client.Do(req)
 		if err != nil {
@@ -186,12 +187,11 @@ func MakeAttestHTTPCallHandler(
 			return
 		}
 
-		logger.Info("attesting http call")
+		logger.Info("attesting HTTP call")
 		attestation, err := attester.Attest(tee.WithAttestUserData(respBytes))
 		if err != nil {
 			WriteError(w, fmt.Errorf("attesting: %w", err))
 			return
-		}
 	// ...
 }
 ```
@@ -203,9 +203,19 @@ response body.
 ```go
 func main() {
 	// ...
+	got, err := client.AttestHTTPCall(ctx, TargetMethod, TargetURL)
+	if err != nil {
+		logger.Error("attesting http call", slog.String("error", err.Error()))
+		return
+	}
+
 	attestation := got.Attestation
 	measurement := config.Nonclave.Measurement
-	verified, err := verifier.Verify(attestation, tee.WithVerifyMeasurement(measurement))
+	verified, err := verifier.Verify(
+		attestation,
+		tee.WithVerifyMeasurement(measurement),
+		tee.WithVerifyDebug(verifyDebug),
+	)
 	if err != nil {
 		logger.Error("verifying attestation", slog.String("error", err.Error()))
 		return
@@ -214,16 +224,7 @@ func main() {
 
 	httpBinResp := HTTPBinGetResponse{}
 	err = json.Unmarshal(verified.UserData, &httpBinResp)
-	if err != nil {
-		logger.Error("unmarshaling httpbin response", slog.String("error", err.Error()))
-		return
-	}
-
-	logger.Info(
-		"verified http call response",
-		slog.String("url", httpBinResp.URL),
-		slog.Any("response", httpBinResp),
-	)
+	// ...
 }
 ```
 

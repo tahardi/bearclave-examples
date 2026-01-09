@@ -50,7 +50,7 @@ func (c *Client) AddCertChain(certChainJSON []byte, selfSigned bool) error {
 	}
 	transport, ok := c.client.Transport.(*http.Transport)
 	if !ok {
-		return errors.New("transport is not an HTTP Transport")
+		return clientError("transport is not an HTTP Transport", nil)
 	}
 
 	if transport.TLSClientConfig == nil {

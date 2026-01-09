@@ -17,17 +17,19 @@ import (
 )
 
 const (
-	DefaultHost    = "127.0.0.1"
-	DefaultPort    = 8080
-	DefaultTimeout = 15 * time.Second
-	TargetMethod   = "GET"
-	TargetURL      = "http://httpbin.org/get"
+	DefaultHost        = "127.0.0.1"
+	DefaultPort        = 8080
+	DefaultVerifyDebug = false
+	DefaultTimeout     = 15 * time.Second
+	TargetMethod       = "GET"
+	TargetURL          = "http://httpbin.org/get"
 )
 
 var (
-	configFile string
-	host       string
-	port       int
+	configFile  string
+	host        string
+	port        int
+	verifyDebug bool
 )
 
 type HTTPBinGetResponse struct {
@@ -56,6 +58,12 @@ func main() {
 		"port",
 		DefaultPort,
 		"The port of the enclave proxy to connect to (default: 8080)",
+	)
+	flag.BoolVar(
+		&verifyDebug,
+		"verify-debug",
+		DefaultVerifyDebug,
+		"Allow attestations from enclaves running in debug mode (default: false)",
 	)
 	flag.Parse()
 
@@ -86,7 +94,11 @@ func main() {
 
 	attestation := got.Attestation
 	measurement := config.Nonclave.Measurement
-	verified, err := verifier.Verify(attestation, tee.WithVerifyMeasurement(measurement))
+	verified, err := verifier.Verify(
+		attestation,
+		tee.WithVerifyMeasurement(measurement),
+		tee.WithVerifyDebug(verifyDebug),
+	)
 	if err != nil {
 		logger.Error("verifying attestation", slog.String("error", err.Error()))
 		return

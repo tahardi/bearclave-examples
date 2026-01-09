@@ -17,19 +17,23 @@ import (
 )
 
 const (
-	DefaultHost    = "127.0.0.1"
-	DefaultPort    = 8080
-	DefaultPortTLS = 8443
-	DefaultTimeout = 15 * time.Second
-	TargetMethod   = "GET"
-	TargetURL      = "https://httpbin.org/get"
+	DefaultHost        = "127.0.0.1"
+	DefaultPort        = 8080
+	DefaultPortTLS     = 8443
+	DefaultSelfSigned  = true
+	DefaultVerifyDebug = false
+	DefaultTimeout     = 15 * time.Second
+	TargetMethod       = "GET"
+	TargetURL          = "https://httpbin.org/get"
 )
 
 var (
-	configFile string
-	host       string
-	port       int
-	portTLS    int
+	configFile  string
+	host        string
+	port        int
+	portTLS     int
+	selfSigned  bool
+	verifyDebug bool
 )
 
 type HTTPBinGetResponse struct {
@@ -65,6 +69,18 @@ func main() {
 		DefaultPortTLS,
 		"The port of the enclave TLS proxy to connect to (default: 8443)",
 	)
+	flag.BoolVar(
+		&selfSigned,
+		"self-signed",
+		DefaultSelfSigned,
+		"Allow for self-signed certificates (default: true)",
+	)
+	flag.BoolVar(
+		&verifyDebug,
+		"verify-debug",
+		DefaultVerifyDebug,
+		"Allow attestations from enclaves running in debug mode (default: false)",
+	)
 	flag.Parse()
 
 	logger := slog.New(slog.NewTextHandler(os.Stdout, nil))
@@ -95,6 +111,7 @@ func main() {
 	verifiedCert, err := verifier.Verify(
 		attestedCert.Attestation,
 		tee.WithVerifyMeasurement(config.Nonclave.Measurement),
+		tee.WithVerifyDebug(verifyDebug),
 	)
 	if err != nil {
 		logger.Error("verifying cert attestation", slog.String("error", err.Error()))
@@ -104,12 +121,13 @@ func main() {
 
 	proxyTLSURL := "https://" + net.JoinHostPort(host, strconv.Itoa(portTLS))
 	clientTLS := networking.NewClient(proxyTLSURL)
-	err = clientTLS.AddCertChain(verifiedCert.UserData)
+	err = clientTLS.AddCertChain(verifiedCert.UserData, selfSigned)
 	if err != nil {
 		logger.Error("adding cert", slog.String("error", err.Error()))
 		return
 	}
 
+	logger.Info("attesting https call", slog.String("revProxyTLS", proxyTLSURL))
 	httpsCtx, httpsCancel := context.WithTimeout(context.Background(), DefaultTimeout)
 	defer httpsCancel()
 	attestedCall, err := clientTLS.AttestHTTPSCall(httpsCtx, TargetMethod, TargetURL)
@@ -121,6 +139,7 @@ func main() {
 	verifiedCall, err := verifier.Verify(
 		attestedCall.Attestation,
 		tee.WithVerifyMeasurement(config.Nonclave.Measurement),
+		tee.WithVerifyDebug(verifyDebug),
 	)
 	if err != nil {
 		logger.Error("verifying call attestation", slog.String("error", err.Error()))
