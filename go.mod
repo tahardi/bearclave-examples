@@ -7,7 +7,7 @@ require (
 	github.com/google/cel-go v0.26.1
 	github.com/spf13/viper v1.21.0
 	github.com/stretchr/testify v1.11.1
-	github.com/tahardi/bearclave v0.1.1-0.20260109145717-cdadf337e080
+	github.com/tahardi/bearclave v0.1.1-0.20260109151050-3598059643b8
 )
 
 require (
