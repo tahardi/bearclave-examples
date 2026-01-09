@@ -14,7 +14,7 @@ requests to the Enclave, as well as the Enclave's request that it makes on
 behalf of the Nonclave. Additionally, we are going to assume (for now) that
 the Enclave does not have access to a Certificate Authority, but it can generate
 self-signed certs. The Nonclave must first fetch an attested certificate from
-the Enclave, and then use it to secure future communication with the Enclave.
+the Enclave and then use it to secure future communication with the Enclave.
 
 In summary, we will need:
 - A Nonclave client that makes HTTP and HTTPS requests to an Enclave
