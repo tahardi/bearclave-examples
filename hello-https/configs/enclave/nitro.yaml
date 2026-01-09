@@ -1,0 +1,8 @@
+platform: "nitro"
+enclave:
+  addr: "http://4:8083"
+  addr_tls: "https://4:8444"
+proxy:
+  addr_tls: "http://3:8084"
+  rev_addr: "http://0.0.0.0:8080"
+  rev_addr_tls: "https://0.0.0.0:8443"

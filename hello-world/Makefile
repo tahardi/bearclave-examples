@@ -123,7 +123,8 @@ aws-nitro-proxy-run:
 aws-nitro-nonclave-run:
 	go run ./nonclave/main.go \
 		--config $(aws_nitro_nonclave_config) \
-		--host $(aws_nitro_instance_ip)
+		--host $(aws_nitro_instance_ip) \
+		--verify-debug true
 
 .PHONY: aws-nitro-instance-start
 aws-nitro-instance-start:

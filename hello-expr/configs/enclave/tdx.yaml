@@ -1,9 +1,6 @@
 platform: "tdx"
 enclave:
-  network: "tcp"
   addr: "http://127.0.0.1:8083"
-  route: "app/v1"
 proxy:
-  network: "tcp"
-  in_addr: "http://0.0.0.0:8080"
-  out_addr: "http://127.0.0.1:8082"
+  addr: "http://127.0.0.1:8082"
+  rev_addr: "http://0.0.0.0:8080"

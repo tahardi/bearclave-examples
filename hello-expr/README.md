@@ -32,14 +32,14 @@ that the URL matches the expected value.
 ```go
 func main() {
 	// ...
+	ctx, cancel := context.WithTimeout(context.Background(), DefaultTimeout)
+	defer cancel()
+
+	proxyURL := "http://" + net.JoinHostPort(host, strconv.Itoa(port))
+	client := networking.NewClient(proxyURL)
+
 	env := map[string]any{
 		"targetUrl": "http://httpbin.org/get",
-	}
-	expression := `httpGet(targetUrl).url == targetUrl ? "URL Match Success" : "URL Mismatch"`
-	got, err := client.AttestExpr(ctx, expression, env)
-	if err != nil {
-		logger.Error("attesting expr", slog.String("error", err.Error()))
-		return
 	}
 	// ...
 }
@@ -99,7 +99,7 @@ Expr engine.
 ```go
 func main() {
 	// ...
-	client, err := tee.NewProxiedClient(config.Platform, config.Proxy.OutAddr)
+	client, err := tee.NewProxiedClient(config.Platform, config.Proxy.Addr)
 	if err != nil {
 		logger.Error("making proxied client", slog.String("error", err.Error()))
 		return
@@ -156,6 +156,7 @@ func MakeAttestExprHandler(
 	logger *slog.Logger,
 ) http.HandlerFunc {
 	// ...
+
 		ctx, cancel := context.WithTimeout(r.Context(), exprTimeout)
 		defer cancel()
 
@@ -185,7 +186,6 @@ func MakeAttestExprHandler(
 			logger.Error("attesting", slog.String("error", err.Error()))
 			WriteError(w, fmt.Errorf("attesting: %w", err))
 			return
-		}
 	// ...
 }
 ```
@@ -234,14 +234,14 @@ attestation.
 ```go
 func main() {
 	// ...
-	attestation := got.Attestation
-	measurement := config.Nonclave.Measurement
-	verified, err := verifier.Verify(attestation, tee.WithVerifyMeasurement(measurement))
+	got, err := client.AttestExpr(ctx, expression, env)
 	if err != nil {
-		logger.Error("verifying attestation", slog.String("error", err.Error()))
+		logger.Error("attesting expr", slog.String("error", err.Error()))
 		return
 	}
-	logger.Info("verified attestation")
+
+	attestation := got.Attestation
+	measurement := config.Nonclave.Measurement
 	// ...
 }
 ```
@@ -261,6 +261,16 @@ type AttestedExpr struct {
 ```go
 func main() {
 	// ...
+		attestation,
+		tee.WithVerifyMeasurement(measurement),
+		tee.WithVerifyDebug(verifyDebug),
+	)
+	if err != nil {
+		logger.Error("verifying attestation", slog.String("error", err.Error()))
+		return
+	}
+	logger.Info("verified attestation")
+
 	attestedExpr := networking.AttestedExpr{}
 	err = json.Unmarshal(verified.UserData, &attestedExpr)
 	if err != nil {
@@ -270,16 +280,7 @@ func main() {
 
 	logger.Info(
 		"attested expression",
-		slog.String("expression", attestedExpr.Expression),
-		slog.Any("env", attestedExpr.Env),
-	)
-
-	resultString, ok := attestedExpr.Output.(string)
-	if !ok {
-		logger.Error("expected string output from expression", slog.Any("got", attestedExpr.Output))
-		return
-	}
-	logger.Info("expression result:", slog.String("value", resultString))
+	// ...
 }
 ```
 

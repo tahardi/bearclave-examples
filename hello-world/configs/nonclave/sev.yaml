@@ -1,6 +1,5 @@
 platform: "sev"
 nonclave:
-  route: "app/v1"
   measurement: |
     {
       "version": 5,
@@ -9,24 +8,24 @@ nonclave:
       "family_id": "AAAAAAAAAAAAAAAAAAAAAA==",
       "image_id": "AAAAAAAAAAAAAAAAAAAAAA==",
       "vmpl": 0,
-      "current_tcb": 16004385700791189508,
+      "current_tcb": 16004667175767900164,
       "platform_info": 37,
       "signer_info": 0,
-      "measurement": "t0fVVFLguekHl3Cknjl8Xm2Vc1geJG2nuqxPKLXNxbG20ZJRuO5gD9FqNwj1hAbz",
+      "measurement": "FBlf3jaFK2nyrBcWbr8yIzUbHDSBTxEDOUEmUoGQc+Bh7XxH5uANAqgXrrSZLOIN",
       "host_data": "AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA=",
       "id_key_digest": "AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA",
       "author_key_digest": "AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA",
-      "report_id": "gr24Ejlrp/FlkqQdqkcHwV+3FWajgpoebj/onvPi8ow=",
+      "report_id": "lxKWDBdruwhp3zhKGJlTp1XMgTQtU8jtCM8fPjdSuqE=",
       "report_id_ma": "//////////////////////////////////////////8=",
-      "reported_tcb": 16004385700791189508,
-      "chip_id": "rZKJc4QPLzUODm5BZkSeQHwNgUk98X181IIg9oyHCQiJT5ZtG0r79RAUmO3S7JN3PU6ohIYbNEZ/Jx9Lgs89KQ==",
-      "committed_tcb": 16004385700791189508,
-      "current_build": 35,
-      "current_minor": 55,
+      "reported_tcb": 16004667175767900164,
+      "chip_id": "NjfDnoils16t3k+EEdHWRUuoTWYwznDFOwzVtsbgrIemplzhPxy539W+iX/qtxa0XfMs00fwWrNKboW/RCq0DA==",
+      "committed_tcb": 16004667175767900164,
+      "current_build": 0,
+      "current_minor": 58,
       "current_major": 1,
-      "committed_build": 35,
-      "committed_minor": 55,
+      "committed_build": 0,
+      "committed_minor": 58,
       "committed_major": 1,
-      "launch_tcb": 16004385700791189508,
+      "launch_tcb": 16004667175767900164,
       "cpuid_1eax_fms": 10489617
     }

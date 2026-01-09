@@ -95,8 +95,8 @@ func main() {
 	socket, err := tee.NewSocket(
 		sockCtx,
 		config.Platform,
-		config.Proxy.Network,
-		config.Proxy.OutAddr,
+		tee.NetworkTCP,
+		config.Proxy.Addr,
 	)
 	if err != nil {
 		logger.Error("making socket", slog.String("error", err.Error()))
@@ -114,9 +114,9 @@ func main() {
 	server, err := tee.NewServer(
 		servCtx,
 		tee.NoTEE,
-		config.Proxy.Network,
-		config.Proxy.InAddr,
+		config.Proxy.RevAddr,
 		mux,
+		logger,
 	)
 	if err != nil {
 		logger.Error("making server", slog.String("error", err.Error()))
@@ -124,7 +124,7 @@ func main() {
 	}
 
 	logger.Info("proxy server started", slog.String("addr", server.Addr()))
-	err = server.ListenAndServe()
+	err = server.Serve()
 	if err != nil && !errors.Is(err, http.ErrServerClosed) {
 		logger.Error("proxy server error", slog.String("error", err.Error()))
 	}
