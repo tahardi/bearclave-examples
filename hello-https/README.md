@@ -105,11 +105,11 @@ the Enclave's attested certificate, and an HTTPS server with a handler that
 makes the requested HTTPS call on behalf of the Nonclave. For now, let's just
 look at the HTTP server initialization.
 
-<!-- pluck("function", "main", "hello-https/enclave/main.go", 24, 49) -->
+<!-- pluck("function", "main", "hello-https/enclave/main.go", 30, 55) -->
 ```go
 func main() {
 	// ...
-	certProvider, err := tee.NewSelfSignedCertProvider(Domain, Validity)
+	certProvider, err := tee.NewSelfSignedCertProvider(domain, Validity)
 	if err != nil {
 		logger.Error("making certProvider", slog.String("error", err.Error()))
 		return
@@ -138,7 +138,7 @@ func main() {
 }
 ```
 
-<!-- pluck("function", "main", "hello-https/enclave/main.go", 79, 86) -->
+<!-- pluck("function", "main", "hello-https/enclave/main.go", 85, 92) -->
 ```go
 func main() {
 	// ...
@@ -235,7 +235,7 @@ func main() {
 creates a "proxied" client, which is a `http.Client` configured to send requests
 to our TLS Proxy (via sockets or virtual sockets depending on the platform).
 
-<!-- pluck("function", "main", "hello-https/enclave/main.go", 51, 77) -->
+<!-- pluck("function", "main", "hello-https/enclave/main.go", 57, 83) -->
 ```go
 func main() {
 	// ...
