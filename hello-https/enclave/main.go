@@ -16,11 +16,14 @@ import (
 
 const (
 	DefaultTimeout = 15 * time.Second
-	Domain         = "bearclave.org"
+	DefaultDomain  = "127.0.0.1"
 	Validity       = 1 * time.Hour
 )
 
-var configFile string
+var (
+	configFile string
+	domain     string
+)
 
 func main() {
 	flag.StringVar(
@@ -29,6 +32,12 @@ func main() {
 		"configs/enclave/notee.yaml",
 		"The Trusted Computing platform to use. Options: "+
 			"nitro, sev, tdx, notee (default: notee)",
+	)
+	flag.StringVar(
+		&domain,
+		"domain",
+		DefaultDomain,
+		"The domain name of the server. Used for self-signed certs.",
 	)
 	flag.Parse()
 
@@ -47,7 +56,7 @@ func main() {
 	}
 	defer attester.Close()
 
-	certProvider, err := tee.NewSelfSignedCertProvider(Domain, Validity)
+	certProvider, err := tee.NewSelfSignedCertProvider(domain, Validity)
 	if err != nil {
 		logger.Error("making certProvider", slog.String("error", err.Error()))
 		return
