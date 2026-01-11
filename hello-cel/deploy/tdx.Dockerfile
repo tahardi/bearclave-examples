@@ -9,7 +9,7 @@ ARG CONFIG_FILE=configs/enclave/tdx.yaml
 COPY ./${CONFIG_FILE} ./config.yaml
 COPY ./enclave/bin/enclave .
 COPY ./proxy/bin/proxy .
-COPY ./tdx-run.sh .
+COPY ./deploy/tdx-run.sh .
 RUN chmod +x ./tdx-run.sh
 
 # Use tini as the entry point
