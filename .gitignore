@@ -2,3 +2,10 @@
 configs/
 *.db
 **/bin
+
+# Terraform files
+.terraform/
+*.tfstate
+*.tfstate.*
+crash.log
+override.tf
