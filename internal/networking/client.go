@@ -38,7 +38,7 @@ func NewClientWithClient(
 	}
 }
 
-func (c *Client) AddCertChain(certChainJSON []byte, selfSigned bool) error {
+func (c *Client) AddCertChain(certChainJSON []byte) error {
 	chainDER := [][]byte{}
 	err := json.Unmarshal(certChainJSON, &chainDER)
 	if err != nil {
@@ -60,13 +60,8 @@ func (c *Client) AddCertChain(certChainJSON []byte, selfSigned bool) error {
 		transport.TLSClientConfig.RootCAs = x509.NewCertPool()
 	}
 
-	// Disable hostname verification because our self-signed certs may not
-	// match the name of the instance they are deployed on. That said, we still
-	// perform signature verification by adding the certs to our RootCAs pool.
-	if selfSigned {
-		transport.TLSClientConfig.ServerName = ""
-	}
-
+	// Add certificates to the client's RootCAs pool. This allows us to use
+	// an Enclave's self-signed certificates to establish TLS.
 	for i, certBytes := range chainDER {
 		x509Cert, err := x509.ParseCertificate(certBytes)
 		if err != nil {
