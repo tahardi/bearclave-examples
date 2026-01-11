@@ -58,7 +58,7 @@ aws-cli-login:
 
 # AWS Nitro
 ################################################################################
-aws_nitro_instance_name=tahardi-bearclave
+aws_nitro_instance_name=bearclave-nitro
 aws_nitro_instance_id=$(shell aws ec2 describe-instances \
 	--profile $(aws_profile) \
 	--no-cli-pager \
