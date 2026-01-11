@@ -19,7 +19,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        example: [hello-world, hello-http, hello-expr, hello-cel]
+        example: [hello-world, hello-http, hello-https, hello-expr, hello-cel]
     steps:
       - name: Checkout Bearclave Examples
         uses: actions/checkout@v6
@@ -117,7 +117,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        example: [hello-world, hello-http, hello-expr, hello-cel]
+        example: [hello-world, hello-http, hello-https, hello-expr, hello-cel]
     env:
       AWS_REGION: us-east-2
       S3_BUCKET: bearclave
@@ -285,7 +285,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        example: [hello-world, hello-http, hello-expr, hello-cel]
+        example: [hello-world, hello-http, hello-https, hello-expr, hello-cel]
     env:
       GCP_PROJECT_ID: bearclave
       GCP_REGION: us-east1
@@ -375,7 +375,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        example: [hello-world, hello-http, hello-expr, hello-cel]
+        example: [hello-world, hello-http, hello-https, hello-expr, hello-cel]
     env:
       GCP_PROJECT_ID: bearclave
       GCP_REGION: us-east1
