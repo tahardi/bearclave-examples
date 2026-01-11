@@ -291,8 +291,8 @@ clean-binaries:
 
 .PHONY: clean-images
 clean-images:
-	@docker rmi $(aws_nitro_enclave_image_tag) 2>/dev/null || true
-	@docker rmi $(gcp_sev_enclave_image_name) 2>/dev/null || true
-	@docker rmi $(gcp_sev_enclave_image_tag) 2>/dev/null || true
-	@docker rmi $(gcp_tdx_enclave_image_name) 2>/dev/null || true
-	@docker rmi $(gcp_tdx_enclave_image_tag) 2>/dev/null || true
+	docker rmi $(aws_nitro_enclave_image_tag) 2>/dev/null || true
+	docker rmi $(gcp_sev_enclave_image_name) 2>/dev/null || true
+	docker rmi $(gcp_sev_enclave_image_tag) 2>/dev/null || true
+	docker rmi $(gcp_tdx_enclave_image_name) 2>/dev/null || true
+	docker rmi $(gcp_tdx_enclave_image_tag) 2>/dev/null || true
