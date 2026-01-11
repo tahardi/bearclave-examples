@@ -9,7 +9,7 @@ ARG CONFIG_FILE=configs/enclave/sev.yaml
 COPY ./${CONFIG_FILE} ./config.yaml
 COPY ./enclave/bin/enclave .
 COPY ./proxy/bin/proxy .
-COPY ./sev-run.sh .
+COPY ./deploy/sev-run.sh .
 RUN chmod +x ./sev-run.sh
 
 # Use tini as the entry point
