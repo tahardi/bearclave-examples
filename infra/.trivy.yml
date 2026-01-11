@@ -1,0 +1,23 @@
+# Trivy configuration for Terraform module security scanning
+exit-code: 1
+timeout: 300s
+severity:
+  - CRITICAL
+  - HIGH
+  - MEDIUM
+skip-dirs:
+  - .terraform
+  - .git
+  - .github
+  - examples
+
+skip-files:
+  - .terraform.lock.hcl
+  - .terraform-docs.yml
+  - .trivy.yml
+
+misconfiguration:
+  severity:
+    - CRITICAL
+    - HIGH
+    - MEDIUM
