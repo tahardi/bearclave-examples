@@ -16,10 +16,14 @@ notee-hello-https:
 # Make sure your process-compose port does not conflict with
 # the ports used by enclave, proxy, or nonclave processes
 # https://github.com/F1bonacc1/process-compose
-PROCESS_COMPOSE_PORT=8081
+PROCESS_COMPOSE_PORT=8079
 .PHONY: notee-processes-start
 notee-processes-start:
-	@process-compose up --tui=false --port=${PROCESS_COMPOSE_PORT} -f .process-compose.yaml 2> /dev/null
+	@process-compose up \
+		--tui=false \
+		--port=${PROCESS_COMPOSE_PORT} \
+		-f ./deploy/.process-compose.yaml \
+		2> /dev/null
 
 .PHONY: notee-processes-stop
 notee-processes-stop:
@@ -78,7 +82,7 @@ aws_nitro_enclave_cid=4
 .PHONY: aws-nitro-enclave-build-image
 aws-nitro-enclave-build-image: enclave
 	@docker build \
-		-f ./nitro.Dockerfile \
+		-f ./deploy/nitro.Dockerfile \
 		-t $(aws_nitro_enclave_image_tag) \
 		--build-arg CONFIG_FILE=$(aws_nitro_enclave_config) \
 		.
@@ -180,7 +184,7 @@ gcp_sev_enclave_image_sha=$(shell gcloud container images list-tags \
 .PHONY: gcp-sev-enclave-build-image
 gcp-sev-enclave-build-image: enclave proxy
 	@docker build \
-		-f ./sev.Dockerfile \
+		-f ./deploy/sev.Dockerfile \
 		-t $(gcp_sev_enclave_image_name) \
 		-t $(gcp_sev_enclave_image_tag) \
 		--build-arg CONFIG_FILE=$(gcp_sev_enclave_config) \
@@ -237,7 +241,7 @@ gcp_tdx_enclave_image_sha=$(shell gcloud container images list-tags \
 .PHONY: gcp-tdx-enclave-build-image
 gcp-tdx-enclave-build-image: enclave proxy
 	@docker build \
-		-f ./tdx.Dockerfile \
+		-f ./deploy/tdx.Dockerfile \
 		-t $(gcp_tdx_enclave_image_name) \
 		-t $(gcp_tdx_enclave_image_tag) \
 		--build-arg CONFIG_FILE=$(gcp_tdx_enclave_config) \
@@ -277,7 +281,18 @@ gcp-tdx-instance-ssh:
 # Clean
 ################################################################################
 .PHONY: clean
-clean:
+clean: clean-binaries clean-images
+
+.PHONY: clean-binaries
+clean-binaries:
 	rm -rf ./enclave/bin
 	rm -rf ./proxy/bin
 	rm -rf ./nonclave/bin
+
+.PHONY: clean-images
+clean-images:
+	@docker rmi $(aws_nitro_enclave_image_tag) 2>/dev/null || true
+	@docker rmi $(gcp_sev_enclave_image_name) 2>/dev/null || true
+	@docker rmi $(gcp_sev_enclave_image_tag) 2>/dev/null || true
+	@docker rmi $(gcp_tdx_enclave_image_name) 2>/dev/null || true
+	@docker rmi $(gcp_tdx_enclave_image_tag) 2>/dev/null || true
