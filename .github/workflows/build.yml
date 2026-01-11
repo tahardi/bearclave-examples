@@ -178,7 +178,7 @@ jobs:
         working-directory: ${{ matrix.example }}
         run: |
           docker build \
-            -f ./nitro.Dockerfile \
+            -f ./deploy/nitro.Dockerfile \
             -t ${{ matrix.example }}-enclave-nitro:latest \
             --build-arg CONFIG_FILE=configs/enclave/nitro.yaml \
             .
@@ -343,7 +343,7 @@ jobs:
         working-directory: ${{ matrix.example }}
         env:
           CONFIG_FILE: configs/enclave/sev.yaml
-          DOCKER_FILE: ./sev.Dockerfile
+          DOCKER_FILE: ./deploy/sev.Dockerfile
           IMAGE_NAME: ${{ matrix.example }}-enclave-sev
           IMAGE_REGISTRY: ${{ env.GCP_ARTIFACT_REGISTRY }}/${{ matrix.example }}-enclave-sev
           BRANCH: ${{ steps.tags.outputs.branch }}
@@ -433,7 +433,7 @@ jobs:
         working-directory: ${{ matrix.example }}
         env:
           CONFIG_FILE: configs/enclave/tdx.yaml
-          DOCKER_FILE: ./tdx.Dockerfile
+          DOCKER_FILE: ./deploy/tdx.Dockerfile
           IMAGE_NAME: ${{ matrix.example }}-enclave-tdx
           IMAGE_REGISTRY: ${{ env.GCP_ARTIFACT_REGISTRY }}/${{ matrix.example }}-enclave-tdx
           BRANCH: ${{ steps.tags.outputs.branch }}
