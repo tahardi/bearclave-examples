@@ -20,7 +20,6 @@ const (
 	DefaultHost        = "127.0.0.1"
 	DefaultPort        = 8080
 	DefaultPortTLS     = 8443
-	DefaultSelfSigned  = true
 	DefaultVerifyDebug = false
 	DefaultTimeout     = 15 * time.Second
 	TargetMethod       = "GET"
@@ -32,7 +31,6 @@ var (
 	host        string
 	port        int
 	portTLS     int
-	selfSigned  bool
 	verifyDebug bool
 )
 
@@ -68,12 +66,6 @@ func main() {
 		"port-tls",
 		DefaultPortTLS,
 		"The port of the enclave TLS proxy to connect to (default: 8443)",
-	)
-	flag.BoolVar(
-		&selfSigned,
-		"self-signed",
-		DefaultSelfSigned,
-		"Allow for self-signed certificates (default: true)",
 	)
 	flag.BoolVar(
 		&verifyDebug,
@@ -121,7 +113,7 @@ func main() {
 
 	proxyTLSURL := "https://" + net.JoinHostPort(host, strconv.Itoa(portTLS))
 	clientTLS := networking.NewClient(proxyTLSURL)
-	err = clientTLS.AddCertChain(verifiedCert.UserData, selfSigned)
+	err = clientTLS.AddCertChain(verifiedCert.UserData)
 	if err != nil {
 		logger.Error("adding cert", slog.String("error", err.Error()))
 		return
