@@ -17,12 +17,12 @@ import (
 const (
 	DefaultTimeout = 15 * time.Second
 	DefaultDomain  = "127.0.0.1"
+	DomainKey      = "domain"
 	Validity       = 1 * time.Hour
 )
 
 var (
 	configFile string
-	domain     string
 )
 
 func main() {
@@ -32,12 +32,6 @@ func main() {
 		"configs/enclave/notee.yaml",
 		"The Trusted Computing platform to use. Options: "+
 			"nitro, sev, tdx, notee (default: notee)",
-	)
-	flag.StringVar(
-		&domain,
-		"domain",
-		DefaultDomain,
-		"The domain name of the server. Used for self-signed certs.",
 	)
 	flag.Parse()
 
@@ -56,6 +50,7 @@ func main() {
 	}
 	defer attester.Close()
 
+	domain := config.Enclave.GetArg(DomainKey, DefaultDomain).(string)
 	certProvider, err := tee.NewSelfSignedCertProvider(domain, Validity)
 	if err != nil {
 		logger.Error("making certProvider", slog.String("error", err.Error()))
