@@ -48,7 +48,7 @@ func main() {
 	}
 	defer attester.Close()
 
-	domain := config.Enclave.GetArg(DomainKey, tee.DefaultDomain).(string)
+	domain, _ := config.Enclave.GetArg(DomainKey, tee.DefaultDomain).(string)
 	certProvider, err := tee.NewSelfSignedCertProvider(domain, tee.DefaultIP, tee.DefaultValidity)
 	if err != nil {
 		logger.Error("making certProvider", slog.String("error", err.Error()))

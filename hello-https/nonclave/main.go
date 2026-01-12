@@ -114,8 +114,8 @@ func main() {
 
 	proxyTLSURL := "https://" + net.JoinHostPort(host, strconv.Itoa(portTLS))
 	clientTLS := networking.NewClient(proxyTLSURL)
-	enclaveDomain := config.Nonclave.GetArg(DomainKey, tee.DefaultDomain).(string)
-	err = clientTLS.AddCertChain(verifiedCert.UserData, enclaveDomain)
+	domain, _ := config.Nonclave.GetArg(DomainKey, tee.DefaultDomain).(string)
+	err = clientTLS.AddCertChain(verifiedCert.UserData, domain)
 	if err != nil {
 		logger.Error("adding cert", slog.String("error", err.Error()))
 		return
