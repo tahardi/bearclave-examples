@@ -17,8 +17,20 @@ type Config struct {
 }
 
 type Enclave struct {
-	Addr    string `mapstructure:"addr"`
-	AddrTLS string `mapstructure:"addr_tls"`
+	Addr    string         `mapstructure:"addr"`
+	AddrTLS string         `mapstructure:"addr_tls"`
+	Args    map[string]any `mapstructure:"args,omitempty"`
+}
+
+func (e Enclave) GetArg(key string, defaultVal any) any {
+	if e.Args == nil {
+		return defaultVal
+	}
+
+	if val, ok := e.Args[key]; ok {
+		return val
+	}
+	return defaultVal
 }
 
 type Proxy struct {
