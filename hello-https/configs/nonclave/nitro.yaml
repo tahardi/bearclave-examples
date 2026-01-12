@@ -1,5 +1,7 @@
 platform: "nitro"
 nonclave:
+  args:
+    domain: "bearclave.tee"
   measurement: |
     {
       "pcrs": {

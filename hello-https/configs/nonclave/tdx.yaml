@@ -1,5 +1,7 @@
 platform: "tdx"
 nonclave:
+  args:
+    domain: "bearclave.tee"
   measurement: |
     {
       "tee_tcb_svn": "DQEIAAAAAAAAAAAAAAAAAA==",

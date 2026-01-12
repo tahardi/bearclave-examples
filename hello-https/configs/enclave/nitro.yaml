@@ -3,7 +3,7 @@ enclave:
   addr: "http://4:8083"
   addr_tls: "https://4:8444"
   args:
-    domain: "REPLACE_WITH_DOMAIN"
+    domain: "bearclave.tee"
 proxy:
   addr_tls: "http://3:8084"
   rev_addr: "http://0.0.0.0:8080"

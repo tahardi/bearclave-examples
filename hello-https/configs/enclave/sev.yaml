@@ -2,6 +2,8 @@ platform: "sev"
 enclave:
   addr: "http://127.0.0.1:8083"
   addr_tls: "https://127.0.0.1:8444"
+  args:
+    domain: "bearclave.tee"
 proxy:
   addr_tls: "http://127.0.0.1:8084"
   rev_addr: "http://0.0.0.0:8080"

@@ -1,5 +1,7 @@
 platform: "sev"
 nonclave:
+  args:
+    domain: "bearclave.tee"
   measurement: |
     {
       "version": 5,
