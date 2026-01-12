@@ -82,7 +82,8 @@ aws_nitro_enclave_cid=4
 .PHONY: aws-nitro-enclave-build-config
 aws-nitro-enclave-build-config:
 	@echo "Fetching EC2 instance public DNS from metadata service..."
-	@PUBLIC_DNS=$$(curl -s http://169.254.169.254/latest/meta-data/public-hostname); \
+	@TOKEN=$$(curl -s -X PUT "http://169.254.169.254/latest/api/token" -H "X-aws-ec2-metadata-token-ttl-seconds: 10"); \
+	PUBLIC_DNS=$$(curl -s -H "X-aws-ec2-metadata-token: $$TOKEN" http://169.254.169.254/latest/meta-data/public-hostname); \
 	if [ -z "$$PUBLIC_DNS" ]; then \
 		echo "Error: Could not retrieve public DNS from metadata service"; \
 		exit 1; \
