@@ -22,6 +22,7 @@ const (
 	DefaultPortTLS     = 8443
 	DefaultVerifyDebug = false
 	DefaultTimeout     = 15 * time.Second
+	DomainKey          = "domain"
 	TargetMethod       = "GET"
 	TargetURL          = "https://httpbin.org/get"
 )
@@ -113,7 +114,8 @@ func main() {
 
 	proxyTLSURL := "https://" + net.JoinHostPort(host, strconv.Itoa(portTLS))
 	clientTLS := networking.NewClient(proxyTLSURL)
-	err = clientTLS.AddCertChain(verifiedCert.UserData)
+	enclaveDomain := config.Nonclave.GetArg(DomainKey, tee.DefaultDomain).(string)
+	err = clientTLS.AddCertChain(verifiedCert.UserData, enclaveDomain)
 	if err != nil {
 		logger.Error("adding cert", slog.String("error", err.Error()))
 		return

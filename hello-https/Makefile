@@ -79,21 +79,8 @@ aws_nitro_enclave_cpu_count=2
 aws_nitro_enclave_memory_size=512
 aws_nitro_enclave_cid=4
 
-.PHONY: aws-nitro-enclave-build-config
-aws-nitro-enclave-build-config:
-	@echo "Fetching EC2 instance public DNS from metadata service..."
-	@TOKEN=$$(curl -s -X PUT "http://169.254.169.254/latest/api/token" -H "X-aws-ec2-metadata-token-ttl-seconds: 10"); \
-	PUBLIC_DNS=$$(curl -s -H "X-aws-ec2-metadata-token: $$TOKEN" http://169.254.169.254/latest/meta-data/public-hostname); \
-	if [ -z "$$PUBLIC_DNS" ]; then \
-		echo "Error: Could not retrieve public DNS from metadata service"; \
-		exit 1; \
-	fi; \
-	echo "Found public DNS: $$PUBLIC_DNS"; \
-	echo "Updating $(aws_nitro_enclave_config) with domain: $$PUBLIC_DNS"; \
-	sed -i.bak "s/REPLACE_WITH_DOMAIN/$$PUBLIC_DNS/g" $(aws_nitro_enclave_config)
-
 .PHONY: aws-nitro-enclave-build-image
-aws-nitro-enclave-build-image: aws-nitro-enclave-build-config enclave
+aws-nitro-enclave-build-image: enclave
 	@docker build \
 		-f ./deploy/nitro.Dockerfile \
 		-t $(aws_nitro_enclave_image_tag) \

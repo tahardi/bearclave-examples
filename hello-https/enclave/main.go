@@ -16,9 +16,7 @@ import (
 
 const (
 	DefaultTimeout = 15 * time.Second
-	DefaultDomain  = "127.0.0.1"
 	DomainKey      = "domain"
-	Validity       = 1 * time.Hour
 )
 
 var (
@@ -50,8 +48,8 @@ func main() {
 	}
 	defer attester.Close()
 
-	domain := config.Enclave.GetArg(DomainKey, DefaultDomain).(string)
-	certProvider, err := tee.NewSelfSignedCertProvider(domain, Validity)
+	domain := config.Enclave.GetArg(DomainKey, tee.DefaultDomain).(string)
+	certProvider, err := tee.NewSelfSignedCertProvider(domain, tee.DefaultIP, tee.DefaultValidity)
 	if err != nil {
 		logger.Error("making certProvider", slog.String("error", err.Error()))
 		return
