@@ -105,11 +105,12 @@ the Enclave's attested certificate, and an HTTPS server with a handler that
 makes the requested HTTPS call on behalf of the Nonclave. For now, let's just
 look at the HTTP server initialization.
 
-<!-- pluck("function", "main", "hello-https/enclave/main.go", 30, 55) -->
+<!-- pluck("function", "main", "hello-https/enclave/main.go", 24, 51) -->
 ```go
 func main() {
 	// ...
-	certProvider, err := tee.NewSelfSignedCertProvider(domain, Validity)
+	domain, _ := config.Enclave.GetArg(DomainKey, tee.DefaultDomain).(string)
+	certProvider, err := tee.NewSelfSignedCertProvider(domain, tee.DefaultIP, tee.DefaultValidity)
 	if err != nil {
 		logger.Error("making certProvider", slog.String("error", err.Error()))
 		return
@@ -134,11 +135,12 @@ func main() {
 		logger.Error("creating server", slog.String("error", err.Error()))
 		return
 	}
+	defer server.Close()
 	// ...
 }
 ```
 
-<!-- pluck("function", "main", "hello-https/enclave/main.go", 85, 92) -->
+<!-- pluck("function", "main", "hello-https/enclave/main.go", 80, 87) -->
 ```go
 func main() {
 	// ...
@@ -156,13 +158,14 @@ func main() {
 4. After retrieving and verifying the attested certificate, the Nonclave creates
 a client that uses the attested certificate to secure future HTTPS requests.
 
-<!-- pluck("function", "main", "hello-https/nonclave/main.go", 69, 76) -->
+<!-- pluck("function", "main", "hello-https/nonclave/main.go", 69, 77) -->
 ```go
 func main() {
 	// ...
 	proxyTLSURL := "https://" + net.JoinHostPort(host, strconv.Itoa(portTLS))
 	clientTLS := networking.NewClient(proxyTLSURL)
-	err = clientTLS.AddCertChain(verifiedCert.UserData)
+	domain, _ := config.Nonclave.GetArg(DomainKey, tee.DefaultDomain).(string)
+	err = clientTLS.AddCertChain(verifiedCert.UserData, domain)
 	if err != nil {
 		logger.Error("adding cert", slog.String("error", err.Error()))
 		return
@@ -176,7 +179,7 @@ to the client's TLS configuration.
 
 <!-- pluck("function", "Client.AddCertChain", "internal/networking/client.go", 0, 0) -->
 ```go
-func (c *Client) AddCertChain(certChainJSON []byte) error {
+func (c *Client) AddCertChain(certChainJSON []byte, domain string) error {
 	chainDER := [][]byte{}
 	err := json.Unmarshal(certChainJSON, &chainDER)
 	if err != nil {
@@ -197,6 +200,7 @@ func (c *Client) AddCertChain(certChainJSON []byte) error {
 	if transport.TLSClientConfig.RootCAs == nil {
 		transport.TLSClientConfig.RootCAs = x509.NewCertPool()
 	}
+	transport.TLSClientConfig.ServerName = domain
 
 	// Add certificates to the client's RootCAs pool. This allows us to use
 	// an Enclave's self-signed certificates to establish TLS.
@@ -216,7 +220,7 @@ Remember that the Nonclave is actually hitting the Reverse TLS Proxy first, but
 the TLS connection is terminated at the Enclave. The Proxy transparently
 forwards the request and cannot determine what is inside.
 
-<!-- pluck("function", "main", "hello-https/nonclave/main.go", 78, 85) -->
+<!-- pluck("function", "main", "hello-https/nonclave/main.go", 79, 86) -->
 ```go
 func main() {
 	// ...
@@ -235,7 +239,7 @@ func main() {
 creates a "proxied" client, which is a `http.Client` configured to send requests
 to our TLS Proxy (via sockets or virtual sockets depending on the platform).
 
-<!-- pluck("function", "main", "hello-https/enclave/main.go", 57, 83) -->
+<!-- pluck("function", "main", "hello-https/enclave/main.go", 52, 78) -->
 ```go
 func main() {
 	// ...
@@ -349,7 +353,7 @@ and extracts the response body. That's it! We now have an attested response from
 HTTP Bin that anybody can independently verify. Moreover, we made these requests
 with HTTPS, so we can now include sensitive information in our requests if needed.
 
-<!-- pluck("function", "main", "hello-https/nonclave/main.go", 86, 108) -->
+<!-- pluck("function", "main", "hello-https/nonclave/main.go", 87, 109) -->
 ```go
 func main() {
 	// ...

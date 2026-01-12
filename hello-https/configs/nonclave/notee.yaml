@@ -1,3 +1,5 @@
 platform: "notee"
 nonclave:
+  args:
+    domain: "bearclave.tee"
   measurement: "Not a TEE platform. Code measurements are not real."

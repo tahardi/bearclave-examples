@@ -38,7 +38,7 @@ func NewClientWithClient(
 	}
 }
 
-func (c *Client) AddCertChain(certChainJSON []byte) error {
+func (c *Client) AddCertChain(certChainJSON []byte, domain string) error {
 	chainDER := [][]byte{}
 	err := json.Unmarshal(certChainJSON, &chainDER)
 	if err != nil {
@@ -59,6 +59,7 @@ func (c *Client) AddCertChain(certChainJSON []byte) error {
 	if transport.TLSClientConfig.RootCAs == nil {
 		transport.TLSClientConfig.RootCAs = x509.NewCertPool()
 	}
+	transport.TLSClientConfig.ServerName = domain
 
 	// Add certificates to the client's RootCAs pool. This allows us to use
 	// an Enclave's self-signed certificates to establish TLS.

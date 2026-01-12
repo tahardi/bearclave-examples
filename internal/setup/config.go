@@ -17,8 +17,20 @@ type Config struct {
 }
 
 type Enclave struct {
-	Addr    string `mapstructure:"addr"`
-	AddrTLS string `mapstructure:"addr_tls"`
+	Addr    string         `mapstructure:"addr"`
+	AddrTLS string         `mapstructure:"addr_tls"`
+	Args    map[string]any `mapstructure:"args,omitempty"`
+}
+
+func (e Enclave) GetArg(key string, defaultVal any) any {
+	if e.Args == nil {
+		return defaultVal
+	}
+
+	if val, ok := e.Args[key]; ok {
+		return val
+	}
+	return defaultVal
 }
 
 type Proxy struct {
@@ -29,7 +41,19 @@ type Proxy struct {
 }
 
 type Nonclave struct {
-	Measurement string `mapstructure:"measurement"`
+	Measurement string         `mapstructure:"measurement"`
+	Args        map[string]any `mapstructure:"args,omitempty"`
+}
+
+func (n Nonclave) GetArg(key string, defaultVal any) any {
+	if n.Args == nil {
+		return defaultVal
+	}
+
+	if val, ok := n.Args[key]; ok {
+		return val
+	}
+	return defaultVal
 }
 
 func LoadConfig(configFile string) (*Config, error) {
