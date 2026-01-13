@@ -125,7 +125,7 @@ func main() {
 	socket, err := tee.NewSocket(
 		sockCtx,
 		config.Platform,
-		tee.NetworkTCP,
+		tee.NetworkTCP4,
 		config.Proxy.Addr,
 	)
 	if err != nil {
@@ -224,7 +224,7 @@ func main() {
 	socket, err := tee.NewSocket(
 		ctx,
 		config.Platform,
-		tee.NetworkTCP,
+		tee.NetworkTCP4,
 		config.Enclave.Addr,
 	)
 	// ...
