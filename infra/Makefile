@@ -26,10 +26,6 @@ lint-init:
 lint: lint-init
 	@tflint --config $(lint_config) --recursive
 
-.PHONY: lint-fix
-lint-fix: lint-init
-	@tflint --config $(lint_config) --fix --recursive
-
 .PHONY: sec-check
 sec-check:
 	@trivy config \
