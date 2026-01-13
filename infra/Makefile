@@ -17,17 +17,14 @@ fmt:
 fmt-check:
 	@terraform fmt -recursive -check
 
+lint_config=$(CURDIR)/.tflint.hcl
 .PHONY: lint-init
 lint-init:
-	@tflint --config .tflint.hcl --init
+	@tflint --config $(lint_config) --init
 
 .PHONY: lint
 lint: lint-init
-	@tflint --config .tflint.hcl
-
-.PHONY: lint-fix
-lint-fix: lint-init
-	@tflint --config .tflint.hcl --fix
+	@tflint --config $(lint_config) --recursive
 
 .PHONY: sec-check
 sec-check:
