@@ -165,7 +165,7 @@ gcp_artifact_registry=us-east1-docker.pkg.dev/$(gcp_project_id)/bearclave
 
 # GCP AMD SEV-SNP
 ################################################################################
-gcp_sev_instance_name=bearclave-sev-snp
+gcp_tdx_instance_name=bearclave-tdx
 gcp_sev_instance_ip=$(shell gcloud compute instances describe \
 	$(gcp_sev_instance_name) \
 	--zone $(gcp_zone) \

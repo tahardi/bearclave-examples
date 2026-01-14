@@ -222,7 +222,7 @@ gcp-sev-instance-ssh:
 
 # GCP Intel TDX
 ################################################################################
-gcp_tdx_instance_name=instance-bearclave-tdx
+gcp_tdx_instance_name=bearclave-tdx
 gcp_tdx_instance_ip=$(shell gcloud compute instances describe \
 	$(gcp_tdx_instance_name) \
 	--zone $(gcp_zone) \
