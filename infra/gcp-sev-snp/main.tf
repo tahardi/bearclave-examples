@@ -26,7 +26,7 @@ variable "ssh_public_key" {
 }
 
 module "gcp_sev_snp" {
-  source = "git::https://github.com/tahardi/bearclave-tf.git//modules/gcp-sev-snp?ref=b4651353d566acfd71ae5f05ecea394f0da8e6a8"
+  source = "git::https://github.com/tahardi/bearclave-tf.git//modules/gcp-sev-snp?ref=v0.1.0"
 
   project_id            = "bearclave"
   service_account_email = var.service_account_email

@@ -26,7 +26,7 @@ variable "ssh_public_key" {
 }
 
 module "gcp_tdx" {
-  source = "git::https://github.com/tahardi/bearclave-tf.git//modules/gcp-tdx?ref=e4b5365fe00637edcaa7886e4ad809fa2b973c56"
+  source = "git::https://github.com/tahardi/bearclave-tf.git//modules/gcp-tdx?ref=v0.1.0"
 
   project_id            = "bearclave"
   service_account_email = var.service_account_email
