@@ -29,7 +29,7 @@ for the Enclave's attested certificate. While this request is not protected by
 TLS, the attestation is used to prove the authenticity and integrity of the
 certificate.
 
-<!-- pluck("function", "main", "hello-https/nonclave/main.go", 47, 68) -->
+<!-- pluck("go", "function", "main", "hello-https/nonclave/main.go", 47, 68) -->
 ```go
 func main() {
 	// ...
@@ -62,7 +62,7 @@ func main() {
 forwards HTTP requests to the Enclave, as well as a Reverse TLS Proxy that listens on
 8443 and forwards HTTPS requests to the Enclave.
 
-<!-- pluck("function", "main", "hello-https/proxy/main.go", 17, 47) -->
+<!-- pluck("go", "function", "main", "hello-https/proxy/main.go", 17, 47) -->
 ```go
 func main() {
 	// ...
@@ -105,7 +105,7 @@ the Enclave's attested certificate, and an HTTPS server with a handler that
 makes the requested HTTPS call on behalf of the Nonclave. For now, let's just
 look at the HTTP server initialization.
 
-<!-- pluck("function", "main", "hello-https/enclave/main.go", 24, 51) -->
+<!-- pluck("go", "function", "main", "hello-https/enclave/main.go", 24, 51) -->
 ```go
 func main() {
 	// ...
@@ -140,7 +140,7 @@ func main() {
 }
 ```
 
-<!-- pluck("function", "main", "hello-https/enclave/main.go", 80, 87) -->
+<!-- pluck("go", "function", "main", "hello-https/enclave/main.go", 80, 87) -->
 ```go
 func main() {
 	// ...
@@ -158,7 +158,7 @@ func main() {
 4. After retrieving and verifying the attested certificate, the Nonclave creates
 a client that uses the attested certificate to secure future HTTPS requests.
 
-<!-- pluck("function", "main", "hello-https/nonclave/main.go", 69, 77) -->
+<!-- pluck("go", "function", "main", "hello-https/nonclave/main.go", 69, 77) -->
 ```go
 func main() {
 	// ...
@@ -177,7 +177,7 @@ func main() {
 Here is the implementation of `AddCertChain` that adds the attested certificate
 to the client's TLS configuration.
 
-<!-- pluck("function", "Client.AddCertChain", "internal/networking/client.go", 0, 0) -->
+<!-- pluck("go", "function", "Client.AddCertChain", "internal/networking/client.go", 0, 0) -->
 ```go
 func (c *Client) AddCertChain(certChainJSON []byte, domain string) error {
 	chainDER := [][]byte{}
@@ -220,7 +220,7 @@ Remember that the Nonclave is actually hitting the Reverse TLS Proxy first, but
 the TLS connection is terminated at the Enclave. The Proxy transparently
 forwards the request and cannot determine what is inside.
 
-<!-- pluck("function", "main", "hello-https/nonclave/main.go", 79, 86) -->
+<!-- pluck("go", "function", "main", "hello-https/nonclave/main.go", 79, 86) -->
 ```go
 func main() {
 	// ...
@@ -239,7 +239,7 @@ func main() {
 creates a "proxied" client, which is a `http.Client` configured to send requests
 to our TLS Proxy (via sockets or virtual sockets depending on the platform).
 
-<!-- pluck("function", "main", "hello-https/enclave/main.go", 52, 78) -->
+<!-- pluck("go", "function", "main", "hello-https/enclave/main.go", 52, 78) -->
 ```go
 func main() {
 	// ...
@@ -275,7 +275,7 @@ func main() {
 
 7. Looking at `MakeAttestHTTPSCallHandler` we can see that the Enclave makes
 the Nonclave's requested call and attests to the response.
-<!-- pluck("function", "MakeAttestHTTPSCallHandler", "internal/networking/handlers.go", 12, 47) -->
+<!-- pluck("go", "function", "MakeAttestHTTPSCallHandler", "internal/networking/handlers.go", 12, 47) -->
 ```go
 func MakeAttestHTTPSCallHandler(
 	ctxTimeout time.Duration,
@@ -329,7 +329,7 @@ keep track of all the different servers and proxies at this point. Remember that
 we use Proxy to refer to the application as a whole, which in this particular
 example includes a reverse proxy, reverse TLS proxy, and a TLS proxy.
 
-<!-- pluck("function", "main", "hello-https/proxy/main.go", 52, 63) -->
+<!-- pluck("go", "function", "main", "hello-https/proxy/main.go", 52, 63) -->
 ```go
 func main() {
 	// ...
@@ -353,7 +353,7 @@ and extracts the response body. That's it! We now have an attested response from
 HTTP Bin that anybody can independently verify. Moreover, we made these requests
 with HTTPS, so we can now include sensitive information in our requests if needed.
 
-<!-- pluck("function", "main", "hello-https/nonclave/main.go", 87, 109) -->
+<!-- pluck("go", "function", "main", "hello-https/nonclave/main.go", 87, 109) -->
 ```go
 func main() {
 	// ...

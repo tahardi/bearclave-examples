@@ -9,18 +9,19 @@ secure TEE environment. Try it out yourself! Run the example locally with:
 make
 
 # You should see output similar to:
-[proxy  ] time=2025-12-20T14:46:03.169-05:00 level=INFO msg="loaded config" configs/enclave/notee.yaml="&{Platform:notee Enclave:{Network:tcp Addr:http://127.0.0.1:8083 Route:app/v1} Nonclave:{Measurement: Route:} Proxy:{Network:tcp InAddr:http://0.0.0.0:8080 OutAddr:http://127.0.0.1:8082}}"
-[proxy  ] time=2025-12-20T14:46:03.170-05:00 level=INFO msg="proxy outbound server started"
-[proxy  ] time=2025-12-20T14:46:03.170-05:00 level=INFO msg="proxy inbound server started"
-[enclave        ] time=2025-12-20T14:46:03.719-05:00 level=INFO msg="loaded config" configs/enclave/notee.yaml="&{Platform:notee Enclave:{Network:tcp Addr:http://127.0.0.1:8083 Route:app/v1} Nonclave:{Measurement: Route:} Proxy:{Network:tcp InAddr:http://0.0.0.0:8080 OutAddr:http://127.0.0.1:8082}}"
-[enclave        ] time=2025-12-20T14:46:03.719-05:00 level=INFO msg="enclave server started" addr=127.0.0.1:8083
-[nonclave       ] time=2025-12-20T14:46:04.220-05:00 level=INFO msg="loaded config" configs/nonclave/notee.yaml="&{Platform:notee Enclave:{Network: Addr: Route:} Nonclave:{Measurement:Not a TEE platform. Code measurements are not real. Route:app/v1} Proxy:{Network: InAddr: OutAddr:}}"
-[enclave        ] time=2025-12-20T14:46:04.221-05:00 level=INFO msg="executing expr" expression="httpGet(targetUrl).url == targetUrl ? \"URL Match Success\" : \"URL Mismatch\""
-[proxy  ] time=2025-12-20T14:46:04.221-05:00 level=INFO msg="forwarding request" url=http://httpbin.org/get
-[enclave        ] time=2025-12-20T14:46:04.496-05:00 level=INFO msg="attesting expr" hash="NTP1x0ckuRyhi9bs7EWP/a/bQ5nF85Av1FJUhCy4LIs="
-[nonclave       ] time=2025-12-20T14:46:04.497-05:00 level=INFO msg="verified attestation"
-[nonclave       ] time=2025-12-20T14:46:04.497-05:00 level=INFO msg="verified expression" expression="httpGet(targetUrl).url == targetUrl ? \"URL Match Success\" : \"URL Mismatch\"" env=map[targetUrl:http://httpbin.org/get]
-[nonclave       ] time=2025-12-20T14:46:04.497-05:00 level=INFO msg="expression result:" value="URL Match Success"
+[proxy  ] time=2026-01-18T09:41:00.938-05:00 level=INFO msg="loaded config" configs/enclave/notee.yaml="&{Platform:notee Enclave:{Addr:http://127.0.0.1:8083 AddrTLS: Args:map[]} Nonclave:{Measurement: Args:map[]} Proxy:{Addr:http://127.0.0.1:8082 AddrTLS: RevAddr:http://0.0.0.0:8080 RevAddrTLS:}}"
+[proxy  ] time=2026-01-18T09:41:00.939-05:00 level=INFO msg="proxy outbound server started"
+[proxy  ] time=2026-01-18T09:41:00.939-05:00 level=INFO msg="proxy inbound server started"
+[enclave        ] time=2026-01-18T09:41:01.050-05:00 level=INFO msg="loaded config" configs/enclave/notee.yaml="&{Platform:notee Enclave:{Addr:http://127.0.0.1:8083 AddrTLS: Args:map[]} Nonclave:{Measurement: Args:map[]} Proxy:{Addr:http://127.0.0.1:8082 AddrTLS: RevAddr:http://0.0.0.0:8080 RevAddrTLS:}}"
+[enclave        ] time=2026-01-18T09:41:01.051-05:00 level=INFO msg="enclave server started" addr=127.0.0.1:8083
+[nonclave       ] time=2026-01-18T09:41:01.154-05:00 level=INFO msg="loaded config" configs/nonclave/notee.yaml="&{Platform:notee Enclave:{Addr: AddrTLS: Args:map[]} Nonclave:{Measurement:Not a TEE platform. Code measurements are not real. Args:map[]} Proxy:{Addr: AddrTLS: RevAddr: RevAddrTLS:}}"
+[enclave        ] time=2026-01-18T09:41:01.158-05:00 level=INFO msg="received attest expr request"
+[enclave        ] time=2026-01-18T09:41:01.159-05:00 level=INFO msg="executing expr" expression="httpGet(targetUrl).url == targetUrl ? \"URL Match Success\" : \"URL Mismatch\""
+[proxy  ] time=2026-01-18T09:41:01.160-05:00 level=INFO msg="forwarding request" url=http://httpbin.org/get
+[enclave        ] time=2026-01-18T09:41:01.258-05:00 level=INFO msg="attesting expr" result="{Expression:httpGet(targetUrl).url == targetUrl ? \"URL Match Success\" : \"URL Mismatch\" Env:map[targetUrl:http://httpbin.org/get] Output:URL Match Success}"
+[nonclave       ] time=2026-01-18T09:41:01.259-05:00 level=INFO msg="verified attestation"
+[nonclave       ] time=2026-01-18T09:41:01.259-05:00 level=INFO msg="attested expression" expression="httpGet(targetUrl).url == targetUrl ? \"URL Match Success\" : \"URL Mismatch\"" env=map[targetUrl:http://httpbin.org/get]
+[nonclave       ] time=2026-01-18T09:41:01.259-05:00 level=INFO msg="expression result:" value="URL Match Success"
 ```
 
 ## How it Works
@@ -28,7 +29,7 @@ make
 1. The Client defines an expression and a set of environment variables. In this
 example, the Client wants to fetch some data from a remote server and verify
 that the URL matches the expected value.
-<!-- pluck("function", "main", "hello-expr/nonclave/main.go", 41, 50) -->
+<!-- pluck("go", "function", "main", "hello-expr/nonclave/main.go", 41, 50) -->
 ```go
 func main() {
 	// ...
@@ -49,7 +50,8 @@ func main() {
 ensure expressions are tightly sandboxed. We can provide additional functionality
 by passing in custom functions, however. In this example, the Enclave defines
 an `httpGet` function that allows expressions to make basic HTTP GET requests.
-<!-- pluck("function", "MakeHTTPGet", "hello-expr/enclave/main.go", 0, 0) -->
+
+<!-- pluck("go", "function", "MakeHTTPGet", "hello-expr/enclave/main.go", 0, 0) -->
 ```go
 func MakeHTTPGet(client *http.Client) engine.ExprEngineFn {
 	return func(params ...any) (any, error) {
@@ -95,7 +97,8 @@ func MakeHTTPGet(client *http.Client) engine.ExprEngineFn {
 
 3. Further down we see how the Enclave registers the `httpGet` function with the
 Expr engine.
-<!-- pluck("function", "main", "hello-expr/enclave/main.go", 23, 43) -->
+
+<!-- pluck("go", "function", "main", "hello-expr/enclave/main.go", 23, 43) -->
 ```go
 func main() {
 	// ...
@@ -125,7 +128,8 @@ func main() {
 
 4. Let's break down the `AttestExprHandler` function. The Enclave expects the
 Client to send the expression string and any necessary environment variables.
-<!-- pluck("type", "AttestExprRequest", "internal/networking/handlers.go", 0, 0) -->
+
+<!-- pluck("go", "type", "AttestExprRequest", "internal/networking/handlers.go", 0, 0) -->
 ```go
 type AttestExprRequest struct {
 	Expression string         `json:"expression"`
@@ -138,7 +142,8 @@ Notice how everything---the expression, the input, and the output---is included
 in the attestation. This way, the Client is assured that the output is both
 genuine (i.e., produced by the Enclave) and correct (i.e., generated by the
 specified expression and inputs).
-<!-- pluck("type", "AttestedExpr", "internal/networking/handlers.go", 0, 0) -->
+
+<!-- pluck("go", "type", "AttestedExpr", "internal/networking/handlers.go", 0, 0) -->
 ```go
 type AttestedExpr struct {
 	Expression string `json:"expression"`
@@ -147,7 +152,7 @@ type AttestedExpr struct {
 }
 ```
 
-<!-- pluck("function", "MakeAttestExprHandler", "internal/networking/handlers.go", 9, 39) -->
+<!-- pluck("go", "function", "MakeAttestExprHandler", "internal/networking/handlers.go", 9, 39) -->
 ```go
 func MakeAttestExprHandler(
 	exprEngine *engine.ExprEngine,
@@ -194,7 +199,8 @@ func MakeAttestExprHandler(
 to terminate. User defined functions, such as our `httpGet` function, are not
 though. Thus, we wrap expression executions with a context so that the
 Enclave does not block forever.
-<!-- pluck("function", "ExprEngine.Execute", "internal/engine/expr.go", 0, 0) -->
+
+<!-- pluck("go", "function", "ExprEngine.Execute", "internal/engine/expr.go", 0, 0) -->
 ```go
 func (e *ExprEngine) Execute(
 	ctx context.Context,
@@ -230,7 +236,8 @@ func (e *ExprEngine) Execute(
 
 7. When the Client receives the Enclave's response, it first verifies the
 attestation.
-<!-- pluck("function", "main", "hello-expr/nonclave/main.go", 51, 59) -->
+
+<!-- pluck("go", "function", "main", "hello-expr/nonclave/main.go", 51, 59) -->
 ```go
 func main() {
 	// ...
@@ -248,7 +255,8 @@ func main() {
 
 8. If the attestation successfully verifies, then the Client can extract and
 use the expression result knowing that it is authentic and correct.
-<!-- pluck("type", "AttestedExpr", "internal/networking/handlers.go", 0, 0) -->
+
+<!-- pluck("go", "type", "AttestedExpr", "internal/networking/handlers.go", 0, 0) -->
 ```go
 type AttestedExpr struct {
 	Expression string `json:"expression"`
@@ -257,7 +265,7 @@ type AttestedExpr struct {
 }
 ```
 
-<!-- pluck("function", "main", "hello-expr/nonclave/main.go", 60, 79) -->
+<!-- pluck("go", "function", "main", "hello-expr/nonclave/main.go", 60, 79) -->
 ```go
 func main() {
 	// ...
