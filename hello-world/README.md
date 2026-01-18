@@ -340,18 +340,18 @@ you can run the example locally by running `make`in the `hello-world` directory:
 make
 
 # You should see output similar to the following:
-[enclave        ] time=2025-12-31T07:06:35.453-05:00 level=INFO msg="loaded config" configs/enclave/notee.yaml="&{Platform:notee Enclave:{Network:tcp Addr:http://127.0.0.1:8083 Route:app/v1} Nonclave:{Measurement: Route:} Proxy:{Network:tcp InAddr:http://0.0.0.0:8080 OutAddr:http://127.0.0.1:8082}}"
-[enclave        ] time=2025-12-31T07:06:35.454-05:00 level=INFO msg="waiting to receive userdata from enclave-proxy..."
-[proxy  ] time=2025-12-31T07:06:35.467-05:00 level=INFO msg="loaded config" configs/enclave/notee.yaml="&{Platform:notee Enclave:{Network:tcp Addr:http://127.0.0.1:8083 Route:app/v1} Nonclave:{Measurement: Route:} Proxy:{Network:tcp InAddr:http://0.0.0.0:8080 OutAddr:http://127.0.0.1:8082}}"
-[proxy  ] time=2025-12-31T07:06:35.468-05:00 level=INFO msg="proxy server started" addr=[::]:8080
-[nonclave       ] time=2025-12-31T07:06:36.014-05:00 level=INFO msg="loaded config" configs/nonclave/notee.yaml="&{Platform:notee Enclave:{Network: Addr: Route:} Nonclave:{Measurement:Not a TEE platform. Code measurements are not real. Route:app/v1} Proxy:{Network: InAddr: OutAddr:}}"
-[proxy  ] time=2025-12-31T07:06:36.015-05:00 level=INFO msg="sending attestation request to enclave..."
-[proxy  ] time=2025-12-31T07:06:36.015-05:00 level=INFO msg="waiting for attestation from enclave..."
-[enclave        ] time=2025-12-31T07:06:36.015-05:00 level=INFO msg=attesting nonce="random nonce here" userdata="Hello, world!"
-[enclave        ] time=2025-12-31T07:06:36.015-05:00 level=INFO msg="sending attestation to enclave-proxy..."
-[enclave        ] time=2025-12-31T07:06:36.015-05:00 level=INFO msg="waiting to receive userdata from enclave-proxy..."
-[proxy  ] time=2025-12-31T07:06:36.016-05:00 level=INFO msg="sent attestation to client"
-[nonclave       ] time=2025-12-31T07:06:36.016-05:00 level=INFO msg="attested and verified userdata" userdata="Hello, world!"
+[enclave        ] time=2026-01-18T09:39:12.061-05:00 level=INFO msg="loaded config" configs/enclave/notee.yaml="&{Platform:notee Enclave:{Addr:http://127.0.0.1:8083 AddrTLS: Args:map[]} Nonclave:{Measurement: Args:map[]} Proxy:{Addr:http://127.0.0.1:8082 AddrTLS: RevAddr:http://0.0.0.0:8080 RevAddrTLS:}}"
+[enclave        ] time=2026-01-18T09:39:12.062-05:00 level=INFO msg="waiting to receive userdata from enclave-proxy..."
+[proxy  ] time=2026-01-18T09:39:12.065-05:00 level=INFO msg="loaded config" configs/enclave/notee.yaml="&{Platform:notee Enclave:{Addr:http://127.0.0.1:8083 AddrTLS: Args:map[]} Nonclave:{Measurement: Args:map[]} Proxy:{Addr:http://127.0.0.1:8082 AddrTLS: RevAddr:http://0.0.0.0:8080 RevAddrTLS:}}"
+[proxy  ] time=2026-01-18T09:39:12.065-05:00 level=INFO msg="proxy server started" addr=0.0.0.0:8080
+[nonclave       ] time=2026-01-18T09:39:12.174-05:00 level=INFO msg="loaded config" configs/nonclave/notee.yaml="&{Platform:notee Enclave:{Addr: AddrTLS: Args:map[]} Nonclave:{Measurement:Not a TEE platform. Code measurements are not real. Args:map[]} Proxy:{Addr: AddrTLS: RevAddr: RevAddrTLS:}}"
+[proxy  ] time=2026-01-18T09:39:12.177-05:00 level=INFO msg="sending attestation request to enclave..."
+[proxy  ] time=2026-01-18T09:39:12.178-05:00 level=INFO msg="waiting for attestation from enclave..."
+[enclave        ] time=2026-01-18T09:39:12.178-05:00 level=INFO msg=attesting nonce="random nonce here" userdata="Hello, world!"
+[enclave        ] time=2026-01-18T09:39:12.179-05:00 level=INFO msg="sending attestation to enclave-proxy..."
+[enclave        ] time=2026-01-18T09:39:12.179-05:00 level=INFO msg="waiting to receive userdata from enclave-proxy..."
+[proxy  ] time=2026-01-18T09:39:12.179-05:00 level=INFO msg="sent attestation to client"
+[nonclave       ] time=2026-01-18T09:39:12.180-05:00 level=INFO msg="attested and verified userdata" userdata="Hello, world!"
 ```
 
 ## Running on the Cloud

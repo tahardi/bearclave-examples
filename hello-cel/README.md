@@ -10,18 +10,19 @@ Try it out yourself!
 make
 
 # You should see output similar to:
-[proxy  ] time=2025-12-20T14:45:38.991-05:00 level=INFO msg="loaded config" configs/enclave/notee.yaml="&{Platform:notee Enclave:{Network:tcp Addr:http://127.0.0.1:8083 Route:app/v1} Nonclave:{Measurement: Route:} Proxy:{Network:tcp InAddr:http://0.0.0.0:8080 OutAddr:http://127.0.0.1:8082}}"
-[proxy  ] time=2025-12-20T14:45:38.991-05:00 level=INFO msg="proxy outbound server started"
-[proxy  ] time=2025-12-20T14:45:38.991-05:00 level=INFO msg="proxy inbound server started"
-[enclave        ] time=2025-12-20T14:45:39.537-05:00 level=INFO msg="loaded config" configs/enclave/notee.yaml="&{Platform:notee Enclave:{Network:tcp Addr:http://127.0.0.1:8083 Route:app/v1} Nonclave:{Measurement: Route:} Proxy:{Network:tcp InAddr:http://0.0.0.0:8080 OutAddr:http://127.0.0.1:8082}}"
-[enclave        ] time=2025-12-20T14:45:39.537-05:00 level=INFO msg="enclave server started" addr=127.0.0.1:8083
-[nonclave       ] time=2025-12-20T14:45:40.061-05:00 level=INFO msg="loaded config" configs/nonclave/notee.yaml="&{Platform:notee Enclave:{Network: Addr: Route:} Nonclave:{Measurement:Not a TEE platform. Code measurements are not real. Route:app/v1} Proxy:{Network: InAddr: OutAddr:}}"
-[enclave        ] time=2025-12-20T14:45:40.062-05:00 level=INFO msg="executing cel" expression="httpGet(targetUrl).url == targetUrl ? \"URL Match Success\" : \"URL Mismatch\""
-[proxy  ] time=2025-12-20T14:45:40.063-05:00 level=INFO msg="forwarding request" url=http://httpbin.org/get
-[enclave        ] time=2025-12-20T14:45:40.240-05:00 level=INFO msg="attesting cel" hash="NTP1x0ckuRyhi9bs7EWP/a/bQ5nF85Av1FJUhCy4LIs="
-[nonclave       ] time=2025-12-20T14:45:40.240-05:00 level=INFO msg="verified attestation"
-[nonclave       ] time=2025-12-20T14:45:40.240-05:00 level=INFO msg="verified cel" hash="NTP1x0ckuRyhi9bs7EWP/a/bQ5nF85Av1FJUhCy4LIs="
-[nonclave       ] time=2025-12-20T14:45:40.240-05:00 level=INFO msg="expression result:" value="URL Match Success"
+[proxy  ] time=2026-01-18T09:41:23.624-05:00 level=INFO msg="loaded config" configs/enclave/notee.yaml="&{Platform:notee Enclave:{Addr:http://127.0.0.1:8083 AddrTLS: Args:map[]} Nonclave:{Measurement: Args:map[]} Proxy:{Addr:http://127.0.0.1:8082 AddrTLS: RevAddr:http://0.0.0.0:8080 RevAddrTLS:}}"
+[proxy  ] time=2026-01-18T09:41:23.624-05:00 level=INFO msg="proxy outbound server started"
+[proxy  ] time=2026-01-18T09:41:23.624-05:00 level=INFO msg="proxy inbound server started"
+[enclave        ] time=2026-01-18T09:41:23.722-05:00 level=INFO msg="loaded config" configs/enclave/notee.yaml="&{Platform:notee Enclave:{Addr:http://127.0.0.1:8083 AddrTLS: Args:map[]} Nonclave:{Measurement: Args:map[]} Proxy:{Addr:http://127.0.0.1:8082 AddrTLS: RevAddr:http://0.0.0.0:8080 RevAddrTLS:}}"
+[enclave        ] time=2026-01-18T09:41:23.723-05:00 level=INFO msg="enclave server started" addr=127.0.0.1:8083
+[nonclave       ] time=2026-01-18T09:41:23.816-05:00 level=INFO msg="loaded config" configs/nonclave/notee.yaml="&{Platform:notee Enclave:{Addr: AddrTLS: Args:map[]} Nonclave:{Measurement:Not a TEE platform. Code measurements are not real. Args:map[]} Proxy:{Addr: AddrTLS: RevAddr: RevAddrTLS:}}"
+[enclave        ] time=2026-01-18T09:41:23.819-05:00 level=INFO msg="received attest CEL request"
+[enclave        ] time=2026-01-18T09:41:23.819-05:00 level=INFO msg="executing cel" expression="httpGet(targetUrl).url == targetUrl ? \"URL Match Success\" : \"URL Mismatch\""
+[proxy  ] time=2026-01-18T09:41:23.822-05:00 level=INFO msg="forwarding request" url=http://httpbin.org/get
+[enclave        ] time=2026-01-18T09:41:23.928-05:00 level=INFO msg="attesting cel" result="{Expression:httpGet(targetUrl).url == targetUrl ? \"URL Match Success\" : \"URL Mismatch\" Env:map[targetUrl:http://httpbin.org/get] Output:URL Match Success}"
+[nonclave       ] time=2026-01-18T09:41:23.929-05:00 level=INFO msg="verified attestation"
+[nonclave       ] time=2026-01-18T09:41:23.929-05:00 level=INFO msg="attested cel" expression="httpGet(targetUrl).url == targetUrl ? \"URL Match Success\" : \"URL Mismatch\"" env=map[targetUrl:http://httpbin.org/get]
+[nonclave       ] time=2026-01-18T09:41:23.929-05:00 level=INFO msg="expression result:" value="URL Match Success"
 ```
 
 ## How it Works
