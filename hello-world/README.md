@@ -330,6 +330,73 @@ func main() {
 }
 ```
 
+## Configuration
+
+All examples come with a `configs` directory containing YAML configuration
+files for the Enclave, Proxy, and Nonclave. Since the Enclave and Proxy are
+deployed together, they share the same configuration file in `configs/enclave/`.
+Notice that there is a configuration file for each platform (e.g., AWS Nitro
+Enclaves, AMD SEV-SNP). The Enclave and Proxy configurations for the No TEE,
+SEV-SNP, and TDX platforms tend to be the same because they all use traditional
+sockets, while the Nitro Enclave configuration uses virtual sockets. This is
+evident when comparing the network addresses:
+
+<!-- pluck("yaml", "file", "notee.yaml", "hello-world/configs/enclave/notee.yaml", 0, 0) -->
+```yaml
+platform: "notee"
+enclave:
+  addr: "http://127.0.0.1:8083"
+proxy:
+  addr: "http://127.0.0.1:8082"
+  rev_addr: "http://0.0.0.0:8080"
+```
+
+<!-- pluck("yaml", "file", "nitro.yaml", "hello-world/configs/enclave/nitro.yaml", 0, 0) -->
+```yaml
+platform: "nitro"
+enclave:
+  addr: "http://4:8083"
+proxy:
+  addr: "http://3:8082"
+  rev_addr: "http://0.0.0.0:8080"
+```
+
+Notice how the addresses the Enclave and Proxy use for communicating with one
+another specify the _Context ID (CID)_ instead of a traditional IP address.
+The Proxy's `rev_addr` is a traditional IP address because this is what it
+listens on for outside communications from our Nonclave client.
+
+The Nonclave configuration files only contain the `measurement` field, which
+represents the expected code measurement of the Enclave. The important thing to
+note is that measurement structures vary between platforms, and that some fields
+will change between deployments because they are tied to specific CPUs or VM
+instances. This means that the Nonclave will throw verification errors when you
+first run these examples, as some of the measurement variables will be out-of-date.
+The Nonclave will tell you what it expected and what it got, so you can update
+the measurement in the configuration file and try again.
+
+Additionally, measurements may change depending on whether the
+Enclave is running in debug mode or not. For example, on AWS Nitro Enclaves,
+PCRs 0-3 are zeroed out when the Enclave is in debug mode:
+
+<!-- pluck("yaml", "file", "nitro.yaml", "hello-world/configs/nonclave/nitro.yaml", 0, 0) -->
+```yaml
+platform: "nitro"
+nonclave:
+  measurement: |
+    {
+      "pcrs": {
+        "0": "AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA",
+        "1": "AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA",
+        "2": "AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA",
+        "3": "AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA",
+        "4": "9NjREorRjsH6gTkkj5c7u0FPOU0HW4rwJRmjFNj4j+DH/NO76QCcIrs9pqSsXDov",
+        "8": "AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA"
+      },
+      "module_id": ""
+    }
+```
+
 ## Running Locally
 
 Follow the setup
