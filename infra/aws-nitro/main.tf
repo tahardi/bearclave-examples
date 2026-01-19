@@ -14,7 +14,7 @@ provider "aws" {
 }
 
 module "aws_nitro_enclave" {
-  source = "git::https://github.com/tahardi/bearclave-tf.git//modules/aws-nitro-enclaves?ref=v0.1.0"
+  source = "git::https://github.com/tahardi/bearclave-tf.git//modules/aws-nitro-enclaves?ref=v0.1.1"
 
   instance_name = "bearclave-nitro"
   key_pair_name = "ec2-key--tahardi-bearclave"
