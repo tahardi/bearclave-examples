@@ -40,6 +40,7 @@ func (e *CELEngine) Execute(
 	expression string,
 	env map[string]any,
 ) (any, error) {
+	//nolint:prealloc
 	opts := []cel.EnvOption{}
 	for k := range env {
 		opts = append(opts, cel.Variable(k, cel.DynType))
@@ -83,6 +84,7 @@ func (e *CELEngine) Execute(
 }
 
 func MakeWhitelistedFnOpts(whitelist map[string]CELEngineFn) []cel.EnvOption {
+	//nolint:prealloc
 	opts := []cel.EnvOption{}
 	for name, fn := range whitelist {
 		// Create a copy of fn because it used in a closure in MakeCELFnBinding

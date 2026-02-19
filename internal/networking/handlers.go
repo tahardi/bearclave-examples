@@ -25,7 +25,7 @@ const (
 	DefaultTimeout      = 15 * time.Second
 )
 
-type AttestCertRequest struct {}
+type AttestCertRequest struct{}
 type AttestCertResponse struct {
 	Attestation *tee.AttestResult `json:"attestation"`
 }
@@ -242,6 +242,11 @@ func MakeAttestHTTPCallHandler(
 			slog.String("method", httpCallReq.Method),
 			slog.String("URL", httpCallReq.URL),
 		)
+		// G704 - potential for Server-Side Request Forgery (SSRF). Normally,
+		// you would sanitize and check the target URL to ensure the client
+		// isn't using the Enclave to make calls that it should not have access
+		// to. Since this is an example program, we don't bother checking.
+		//nolint:gosec
 		resp, err := client.Do(req)
 		if err != nil {
 			WriteError(w, fmt.Errorf("sending request: %w", err))
@@ -306,6 +311,11 @@ func MakeAttestHTTPSCallHandler(
 			slog.String("method", httpsCallReq.Method),
 			slog.String("URL", httpsCallReq.URL),
 		)
+		// G704 - potential for Server-Side Request Forgery (SSRF). Normally,
+		// you would sanitize and check the target URL to ensure the client
+		// isn't using the Enclave to make calls that it should not have access
+		// to. Since this is an example program, we don't bother checking.
+		//nolint:gosec
 		resp, err := client.Do(req)
 		if err != nil {
 			WriteError(w, fmt.Errorf("sending request: %w", err))

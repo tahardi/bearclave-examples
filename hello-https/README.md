@@ -275,7 +275,7 @@ func main() {
 
 7. Looking at `MakeAttestHTTPSCallHandler` we can see that the Enclave makes
 the Nonclave's requested call and attests to the response.
-<!-- pluck("go", "function", "MakeAttestHTTPSCallHandler", "internal/networking/handlers.go", 12, 47) -->
+<!-- pluck("go", "function", "MakeAttestHTTPSCallHandler", "internal/networking/handlers.go", 12, 52) -->
 ```go
 func MakeAttestHTTPSCallHandler(
 	ctxTimeout time.Duration,
@@ -295,6 +295,11 @@ func MakeAttestHTTPSCallHandler(
 			slog.String("method", httpsCallReq.Method),
 			slog.String("URL", httpsCallReq.URL),
 		)
+		// G704 - potential for Server-Side Request Forgery (SSRF). Normally,
+		// you would sanitize and check the target URL to ensure the client
+		// isn't using the Enclave to make calls that it should not have access
+		// to. Since this is an example program, we don't bother checking.
+		//nolint:gosec
 		resp, err := client.Do(req)
 		if err != nil {
 			WriteError(w, fmt.Errorf("sending request: %w", err))

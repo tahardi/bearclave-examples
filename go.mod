@@ -1,6 +1,6 @@
 module github.com/tahardi/bearclave-examples
 
-go 1.25.5
+go 1.26.0
 
 require (
 	github.com/expr-lang/expr v1.17.7

@@ -50,6 +50,8 @@ func makeHTTPGet(client *http.Client) func(params ...any) (any, error) {
 			return nil, fmt.Errorf("creating GET req: %w", err)
 		}
 
+		// G704 - potential for Server-Side Request Forgery (SSRF)
+		//nolint:gosec
 		resp, err := client.Do(req)
 		switch {
 		case err != nil:

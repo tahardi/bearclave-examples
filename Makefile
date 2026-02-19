@@ -7,7 +7,11 @@ SHELL := bash
 .SUFFIXES:
 
 .PHONY: pre-pr
-pre-pr: tidy lint test-unit test-examples pluckmd tf
+pre-pr: tidy lint fix test-unit test-examples pluckmd tf
+
+.PHONY: fix
+fix:
+	@go fix ./...
 
 # https://golangci-lint.run/welcome/install/#install-from-sources
 # They do not recommend using golangci-lint via go tool directive

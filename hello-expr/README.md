@@ -72,6 +72,11 @@ func MakeHTTPGet(client *http.Client) engine.ExprEngineFn {
 			return nil, fmt.Errorf("creating GET req: %w", err)
 		}
 
+		// G704 - potential for Server-Side Request Forgery (SSRF). Normally,
+		// you would sanitize and check the target URL to ensure the client
+		// isn't using the Enclave to make calls that it should not have access
+		// to. Since this is an example program, we don't bother checking.
+		//nolint:gosec
 		resp, err := client.Do(req)
 		switch {
 		case err != nil:
