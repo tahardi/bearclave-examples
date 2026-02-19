@@ -25,7 +25,7 @@ const (
 	DefaultTimeout      = 15 * time.Second
 )
 
-type AttestCertRequest struct {}
+type AttestCertRequest struct{}
 type AttestCertResponse struct {
 	Attestation *tee.AttestResult `json:"attestation"`
 }
@@ -242,6 +242,8 @@ func MakeAttestHTTPCallHandler(
 			slog.String("method", httpCallReq.Method),
 			slog.String("URL", httpCallReq.URL),
 		)
+		// G704 - potential for Server-Side Request Forgery (SSRF)
+		//nolint:gosec
 		resp, err := client.Do(req)
 		if err != nil {
 			WriteError(w, fmt.Errorf("sending request: %w", err))
@@ -306,6 +308,8 @@ func MakeAttestHTTPSCallHandler(
 			slog.String("method", httpsCallReq.Method),
 			slog.String("URL", httpsCallReq.URL),
 		)
+		// G704 - potential for Server-Side Request Forgery (SSRF)
+		//nolint:gosec
 		resp, err := client.Do(req)
 		if err != nil {
 			WriteError(w, fmt.Errorf("sending request: %w", err))

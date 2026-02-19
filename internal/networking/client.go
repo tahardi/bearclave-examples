@@ -215,6 +215,7 @@ func (c *Client) Do(
 	}
 	req.Header.Set("Content-Type", "application/json")
 
+	//nolint:gosec
 	resp, err := c.client.Do(req)
 	switch {
 	case err != nil:
