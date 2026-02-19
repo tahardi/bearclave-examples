@@ -159,7 +159,7 @@ attests to the response and returns it to the Nonclave. The `tee.AttestResult`
 struct contains both an attestation and a "user data" array, which in this case
 contains the response body.
 
-<!-- pluck("go", "function", "MakeAttestHTTPCallHandler", "internal/networking/handlers.go", 11, 41) -->
+<!-- pluck("go", "function", "MakeAttestHTTPCallHandler", "internal/networking/handlers.go", 12, 47) -->
 ```go
 func MakeAttestHTTPCallHandler(
 	ctxTimeout time.Duration,
@@ -168,7 +168,6 @@ func MakeAttestHTTPCallHandler(
 	logger *slog.Logger,
 ) http.HandlerFunc {
 	// ...
-
 		req, err := http.NewRequestWithContext(ctx, httpCallReq.Method, httpCallReq.URL, nil)
 		if err != nil {
 			WriteError(w, fmt.Errorf("creating request: %w", err))
@@ -180,6 +179,11 @@ func MakeAttestHTTPCallHandler(
 			slog.String("method", httpCallReq.Method),
 			slog.String("URL", httpCallReq.URL),
 		)
+		// G704 - potential for Server-Side Request Forgery (SSRF). Normally,
+		// you would sanitize and check the target URL to ensure the client
+		// isn't using the Enclave to make calls that it should not have access
+		// to. Since this is an example program, we don't bother checking.
+		//nolint:gosec
 		resp, err := client.Do(req)
 		if err != nil {
 			WriteError(w, fmt.Errorf("sending request: %w", err))
@@ -198,6 +202,7 @@ func MakeAttestHTTPCallHandler(
 		if err != nil {
 			WriteError(w, fmt.Errorf("attesting: %w", err))
 			return
+		}
 	// ...
 }
 ```
