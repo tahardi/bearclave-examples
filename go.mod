@@ -3,7 +3,7 @@ module github.com/tahardi/bearclave-examples
 go 1.26.0
 
 require (
-	github.com/expr-lang/expr v1.17.7
+	github.com/expr-lang/expr v1.17.8
 	github.com/google/cel-go v0.27.0
 	github.com/spf13/viper v1.21.0
 	github.com/stretchr/testify v1.11.1
