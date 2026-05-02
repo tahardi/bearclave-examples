@@ -13,19 +13,21 @@ provider "aws" {
   region = "us-east-2"
 }
 
-module "aws_nitro_enclave" {
-  source = "git::https://github.com/tahardi/bearclave-tf.git//modules/aws-nitro-enclaves?ref=v0.1.1"
+# Ran `terraform destroy` to teardown all resources
+# associated with this Nitro Enclave instance
+# module "aws_nitro_enclave" {
+#   source = "git::https://github.com/tahardi/bearclave-tf.git//modules/aws-nitro-enclaves?ref=v0.1.1"
 
-  instance_name = "bearclave-nitro"
-  key_pair_name = "ec2-key--tahardi-bearclave"
+#   instance_name = "bearclave-nitro"
+#   key_pair_name = "ec2-key--tahardi-bearclave"
 
-  tags = {
-    Environment = "development"
-    Project     = "bearclave"
-  }
-}
+#   tags = {
+#     Environment = "development"
+#     Project     = "bearclave"
+#   }
+# }
 
-output "instance_id" {
-  value       = module.aws_nitro_enclave.instance_id
-  description = "The EC2 instance ID"
-}
+# output "instance_id" {
+#   value       = module.aws_nitro_enclave.instance_id
+#   description = "The EC2 instance ID"
+# }

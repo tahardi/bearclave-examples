@@ -13,24 +13,26 @@ provider "google" {
   zone    = "us-central1-a"
 }
 
-variable "service_account_email" {
-  description = "GCP service account email"
-  type        = string
-  sensitive   = true
-}
+# Ran `terraform destroy` to teardown all resources
+# associated with this AMD SEV-SNP instance
+# variable "service_account_email" {
+#   description = "GCP service account email"
+#   type        = string
+#   sensitive   = true
+# }
 
-variable "ssh_public_key" {
-  description = "SSH public key for accessing instance"
-  type        = string
-  sensitive   = true
-}
+# variable "ssh_public_key" {
+#   description = "SSH public key for accessing instance"
+#   type        = string
+#   sensitive   = true
+# }
 
-module "gcp_sev_snp" {
-  source = "git::https://github.com/tahardi/bearclave-tf.git//modules/gcp-sev-snp?ref=v0.1.1"
+# module "gcp_sev_snp" {
+#   source = "git::https://github.com/tahardi/bearclave-tf.git//modules/gcp-sev-snp?ref=v0.1.1"
 
-  project_id            = "bearclave"
-  service_account_email = var.service_account_email
-  ssh_public_key        = var.ssh_public_key
-  instance_name         = "bearclave-sev-snp"
-  container_image       = "us-east1-docker.pkg.dev/bearclave/bearclave/hello-https-enclave-sev@sha256:de8845f0139f49acb3927c598cd6ecd4c4f374f6b595467021964995d6e8b9a8"
-}
+#   project_id            = "bearclave"
+#   service_account_email = var.service_account_email
+#   ssh_public_key        = var.ssh_public_key
+#   instance_name         = "bearclave-sev-snp"
+#   container_image       = "us-east1-docker.pkg.dev/bearclave/bearclave/hello-https-enclave-sev@sha256:de8845f0139f49acb3927c598cd6ecd4c4f374f6b595467021964995d6e8b9a8"
+# }
