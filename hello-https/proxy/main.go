@@ -4,6 +4,7 @@ import (
 	"context"
 	"errors"
 	"flag"
+	"fmt"
 	"log/slog"
 	"net/http"
 	"os"
@@ -29,10 +30,17 @@ func main() {
 	flag.Parse()
 
 	logger := slog.New(slog.NewTextHandler(os.Stdout, nil))
+	err := run(logger)
+	if err != nil {
+		logger.Error("running", slog.String("error", err.Error()))
+		os.Exit(1)
+	}
+}
+
+func run(logger *slog.Logger) error {
 	config, err := setup.LoadConfig(configFile)
 	if err != nil {
-		logger.Error("loading config", slog.String("error", err.Error()))
-		return
+		return fmt.Errorf("loading config: %w", err)
 	}
 	logger.Info("loaded config", slog.Any(configFile, config))
 
@@ -47,8 +55,7 @@ func main() {
 		logger,
 	)
 	if err != nil {
-		logger.Error("making revProxy server", slog.String("error", err.Error()))
-		return
+		return fmt.Errorf("making revProxy server: %w", err)
 	}
 	defer revProxy.Close()
 
@@ -63,8 +70,7 @@ func main() {
 		logger,
 	)
 	if err != nil {
-		logger.Error("making revProxyTLS server", slog.String("error", err.Error()))
-		return
+		return fmt.Errorf("making revProxyTLS server: %w", err)
 	}
 	defer revProxyTLS.Close()
 
@@ -78,8 +84,7 @@ func main() {
 		logger,
 	)
 	if err != nil {
-		logger.Error("making proxyTLS server", slog.String("error", err.Error()))
-		return
+		return fmt.Errorf("making proxyTLS server: %w", err)
 	}
 	defer proxyTLS.Close()
 
@@ -102,6 +107,8 @@ func main() {
 	logger.Info("proxyTLS server started", slog.String("addr", proxyTLS.Addr()))
 	err = proxyTLS.Serve()
 	if err != nil {
-		logger.Error("proxyTLS server error", slog.String("error", err.Error()))
+		return fmt.Errorf("serving proxyTLS server: %w", err)
 	}
+
+	return nil
 }

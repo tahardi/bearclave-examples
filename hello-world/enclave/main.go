@@ -4,6 +4,7 @@ import (
 	"context"
 	"encoding/json"
 	"flag"
+	"fmt"
 	"log/slog"
 	"os"
 	"time"
@@ -29,17 +30,23 @@ func main() {
 	flag.Parse()
 
 	logger := slog.New(slog.NewTextHandler(os.Stdout, nil))
+	err := run(logger)
+	if err != nil {
+		logger.Error("running", slog.String("error", err.Error()))
+		os.Exit(1)
+	}
+}
+
+func run(logger *slog.Logger) error {
 	config, err := setup.LoadConfig(configFile)
 	if err != nil {
-		logger.Error("loading config", slog.Any("error", err))
-		return
+		return fmt.Errorf("loading config: %w", err)
 	}
 	logger.Info("loaded config", slog.Any(configFile, config))
 
 	attester, err := tee.NewAttester(config.Platform)
 	if err != nil {
-		logger.Error("making attester", slog.String("error", err.Error()))
-		return
+		return fmt.Errorf("making attester: %w", err)
 	}
 
 	ctx, cancel := context.WithTimeout(context.Background(), DefaultTimeout)
@@ -51,8 +58,7 @@ func main() {
 		config.Enclave.Addr,
 	)
 	if err != nil {
-		logger.Error("making socket", slog.String("error", err.Error()))
-		return
+		return fmt.Errorf("making socket: %w", err)
 	}
 
 	for {
@@ -60,15 +66,13 @@ func main() {
 		ctx := context.Background()
 		reqBytes, err := socket.Receive(ctx)
 		if err != nil {
-			logger.Error("receiving userdata", slog.String("error", err.Error()))
-			return
+			return fmt.Errorf("receiving userdata: %w", err)
 		}
 
 		req := networking.AttestUserDataRequest{}
 		err = json.Unmarshal(reqBytes, &req)
 		if err != nil {
-			logger.Error("unmarshaling request", slog.String("error", err.Error()))
-			return
+			return fmt.Errorf("unmarshaling request: %w", err)
 		}
 
 		userdata := req.UserData
@@ -82,21 +86,18 @@ func main() {
 			tee.WithAttestUserData(userdata),
 		)
 		if err != nil {
-			logger.Error("attesting", slog.String("error", err.Error()))
-			return
+			return fmt.Errorf("attesting: %w", err)
 		}
 
 		attestBytes, err := json.Marshal(attestResult)
 		if err != nil {
-			logger.Error("marshaling attestation", slog.String("error", err.Error()))
-			return
+			return fmt.Errorf("marshaling attestation: %w", err)
 		}
 
 		logger.Info("sending attestation to enclave-proxy...")
 		err = socket.Send(ctx, config.Proxy.Addr, attestBytes)
 		if err != nil {
-			logger.Error("sending attestation", slog.String("error", err.Error()))
-			return
+			return fmt.Errorf("sending attestation: %w", err)
 		}
 	}
 }

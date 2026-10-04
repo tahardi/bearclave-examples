@@ -103,14 +103,13 @@ func MakeHTTPGet(client *http.Client) engine.ExprEngineFn {
 3. Further down we see how the Enclave registers the `httpGet` function with the
 Expr engine.
 
-<!-- pluck("go", "function", "main", "hello-expr/enclave/main.go", 23, 43) -->
+<!-- pluck("go", "function", "run", "hello-expr/enclave/main.go", 11, 29) -->
 ```go
-func main() {
+func run(logger *slog.Logger) error {
 	// ...
 	client, err := tee.NewProxiedClient(config.Platform, config.Proxy.Addr)
 	if err != nil {
-		logger.Error("making proxied client", slog.String("error", err.Error()))
-		return
+		return fmt.Errorf("making proxied client: %w", err)
 	}
 
 	whitelist := map[string]engine.ExprEngineFn{
@@ -118,8 +117,7 @@ func main() {
 	}
 	exprEngine, err := engine.NewExprEngineWithWhitelist(whitelist)
 	if err != nil {
-		logger.Error("making expr engine", slog.String("error", err.Error()))
-		return
+		return fmt.Errorf("making expr engine: %w", err)
 	}
 
 	serverMux := http.NewServeMux()

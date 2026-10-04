@@ -60,9 +60,9 @@ func run(logger *slog.Logger) error {
 forwards HTTP requests to the Enclave, as well as a Reverse TLS Proxy that listens on
 8443 and forwards HTTPS requests to the Enclave.
 
-<!-- pluck("go", "function", "main", "hello-https/proxy/main.go", 17, 47) -->
+<!-- pluck("go", "function", "run", "hello-https/proxy/main.go", 6, 34) -->
 ```go
-func main() {
+func run(logger *slog.Logger) error {
 	// ...
 	revCtx, revCancel := context.WithTimeout(context.Background(), DefaultTimeout)
 	defer revCancel()
@@ -75,8 +75,7 @@ func main() {
 		logger,
 	)
 	if err != nil {
-		logger.Error("making revProxy server", slog.String("error", err.Error()))
-		return
+		return fmt.Errorf("making revProxy server: %w", err)
 	}
 	defer revProxy.Close()
 
@@ -91,8 +90,7 @@ func main() {
 		logger,
 	)
 	if err != nil {
-		logger.Error("making revProxyTLS server", slog.String("error", err.Error()))
-		return
+		return fmt.Errorf("making revProxyTLS server: %w", err)
 	}
 	// ...
 }
@@ -103,15 +101,14 @@ the Enclave's attested certificate, and an HTTPS server with a handler that
 makes the requested HTTPS call on behalf of the Nonclave. For now, let's just
 look at the HTTP server initialization.
 
-<!-- pluck("go", "function", "main", "hello-https/enclave/main.go", 24, 51) -->
+<!-- pluck("go", "function", "run", "hello-https/enclave/main.go", 12, 37) -->
 ```go
-func main() {
+func run(logger *slog.Logger) error {
 	// ...
 	domain, _ := config.Enclave.GetArg(DomainKey, tee.DefaultDomain).(string)
 	certProvider, err := tee.NewSelfSignedCertProvider(domain, tee.DefaultIP, tee.DefaultValidity)
 	if err != nil {
-		logger.Error("making certProvider", slog.String("error", err.Error()))
-		return
+		return fmt.Errorf("making certProvider: %w", err)
 	}
 
 	serverMux := http.NewServeMux()
@@ -130,17 +127,16 @@ func main() {
 		logger,
 	)
 	if err != nil {
-		logger.Error("creating server", slog.String("error", err.Error()))
-		return
+		return fmt.Errorf("creating server: %w", err)
 	}
 	defer server.Close()
 	// ...
 }
 ```
 
-<!-- pluck("go", "function", "main", "hello-https/enclave/main.go", 80, 87) -->
+<!-- pluck("go", "function", "run", "hello-https/enclave/main.go", 64, 71) -->
 ```go
-func main() {
+func run(logger *slog.Logger) error {
 	// ...
 	go func() {
 		logger.Info("enclave server started", slog.String("addr", server.Addr()))
@@ -235,14 +231,13 @@ func run(logger *slog.Logger) error {
 creates a "proxied" client, which is a `http.Client` configured to send requests
 to our TLS Proxy (via sockets or virtual sockets depending on the platform).
 
-<!-- pluck("go", "function", "main", "hello-https/enclave/main.go", 52, 78) -->
+<!-- pluck("go", "function", "run", "hello-https/enclave/main.go", 38, 62) -->
 ```go
-func main() {
+func run(logger *slog.Logger) error {
 	// ...
 	proxiedClient, err := tee.NewProxiedClient(config.Platform, config.Proxy.AddrTLS)
 	if err != nil {
-		logger.Error("making proxied client", slog.String("error", err.Error()))
-		return
+		return fmt.Errorf("making proxied client: %w", err)
 	}
 
 	serverTLSMux := http.NewServeMux()
@@ -262,8 +257,7 @@ func main() {
 		logger,
 	)
 	if err != nil {
-		logger.Error("creating serverTLS", slog.String("error", err.Error()))
-		return
+		return fmt.Errorf("creating serverTLS: %w", err)
 	}
 	// ...
 }
@@ -330,9 +324,9 @@ keep track of all the different servers and proxies at this point. Remember that
 we use Proxy to refer to the application as a whole, which in this particular
 example includes a reverse proxy, reverse TLS proxy, and a TLS proxy.
 
-<!-- pluck("go", "function", "main", "hello-https/proxy/main.go", 52, 63) -->
+<!-- pluck("go", "function", "run", "hello-https/proxy/main.go", 39, 49) -->
 ```go
-func main() {
+func run(logger *slog.Logger) error {
 	// ...
 	proxyTLS, err := tee.NewProxyTLS(
 		proxyTLSCtx,
@@ -341,8 +335,7 @@ func main() {
 		logger,
 	)
 	if err != nil {
-		logger.Error("making proxyTLS server", slog.String("error", err.Error()))
-		return
+		return fmt.Errorf("making proxyTLS server: %w", err)
 	}
 	defer proxyTLS.Close()
 	// ...
