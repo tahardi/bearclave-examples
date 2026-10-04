@@ -17,14 +17,13 @@ behalf of the Nonclave.
 to send an attest HTTP request to the Enclave. In this case, the Nonclave wants
 the Enclave to make the call `GET http://httpbin.org/get`.
 
-<!-- pluck("go", "function", "main", "hello-http/nonclave/main.go", 35, 51) -->
+<!-- pluck("go", "function", "run", "hello-http/nonclave/main.go", 6, 20) -->
 ```go
-func main() {
+func run(logger *slog.Logger) error {
 	// ...
 	verifier, err := tee.NewVerifier(config.Platform)
 	if err != nil {
-		logger.Error("making verifier", slog.String("error", err.Error()))
-		return
+		return fmt.Errorf("making verifier: %w", err)
 	}
 
 	ctx, cancel := context.WithTimeout(context.Background(), DefaultTimeout)
@@ -34,8 +33,7 @@ func main() {
 	client := networking.NewClient(proxyURL)
 	got, err := client.AttestHTTPCall(ctx, TargetMethod, TargetURL)
 	if err != nil {
-		logger.Error("attesting http call", slog.String("error", err.Error()))
-		return
+		return fmt.Errorf("attesting http call: %w", err)
 	}
 	// ...
 }
@@ -48,9 +46,9 @@ then the `tee.NewReverseProxy` function will create a reverse proxy server that
 listens for incoming requests on a normal socket, but forwards them to the
 Enclave via a virtual socket.
 
-<!-- pluck("go", "function", "main", "hello-http/proxy/main.go", 17, 32) -->
+<!-- pluck("go", "function", "run", "hello-http/proxy/main.go", 6, 20) -->
 ```go
-func main() {
+func run(logger *slog.Logger) error {
 	// ...
 	revCtx, revCancel := context.WithTimeout(context.Background(), DefaultTimeout)
 	defer revCancel()
@@ -63,8 +61,7 @@ func main() {
 		logger,
 	)
 	if err != nil {
-		logger.Error("making inbound server", slog.String("error", err.Error()))
-		return
+		return fmt.Errorf("making inbound server: %w", err)
 	}
 	defer revProxy.Close()
 	// ...
@@ -77,9 +74,9 @@ Nitro requires the use of virtual sockets. When running on Nitro, the Proxy
 `Addr` should be set to a virtual socket address (e.g., `http://3:8082`)
 instead of a standard address (e.g., `http://127.0.0.1:8082`). This
 
-<!-- pluck("go", "function", "main", "hello-http/proxy/main.go", 33, 49) -->
+<!-- pluck("go", "function", "run", "hello-http/proxy/main.go", 21, 36) -->
 ```go
-func main() {
+func run(logger *slog.Logger) error {
 	// ...
 	proxyCtx, proxyCancel := context.WithTimeout(context.Background(), DefaultTimeout)
 	defer proxyCancel()
@@ -93,8 +90,7 @@ func main() {
 		logger,
 	)
 	if err != nil {
-		logger.Error("making outbound server", slog.String("error", err.Error()))
-		return
+		return fmt.Errorf("making outbound server: %w", err)
 	}
 	defer proxy.Close()
 	// ...
@@ -106,14 +102,13 @@ create an `*http.Client` that is configured to route requests to the Proxy
 instead of the target URL. When running on Nitro, the client is configured to
 use a virtual socket as the transport instead of a normal one.
 
-<!-- pluck("go", "function", "main", "hello-http/enclave/main.go", 23, 28) -->
+<!-- pluck("go", "function", "run", "hello-http/enclave/main.go", 11, 15) -->
 ```go
-func main() {
+func run(logger *slog.Logger) error {
 	// ...
 	client, err := tee.NewProxiedClient(config.Platform, config.Proxy.Addr)
 	if err != nil {
-		logger.Error("making proxied client", slog.String("error", err.Error()))
-		return
+		return fmt.Errorf("making proxied client: %w", err)
 	}
 	// ...
 }
@@ -126,9 +121,9 @@ Notice how we pass the proxied client created in the previous step to the
 make handler function. This is so we route calls to the Proxy instead of the
 target URL.
 
-<!-- pluck("go", "function", "main", "hello-http/enclave/main.go", 29, 48) -->
+<!-- pluck("go", "function", "run", "hello-http/enclave/main.go", 16, 34) -->
 ```go
-func main() {
+func run(logger *slog.Logger) error {
 	// ...
 	serverMux := http.NewServeMux()
 	serverMux.Handle(
@@ -146,8 +141,7 @@ func main() {
 		logger,
 	)
 	if err != nil {
-		logger.Error("making server", slog.String("error", err.Error()))
-		return
+		return fmt.Errorf("making server: %w", err)
 	}
 	// ...
 }
@@ -210,14 +204,13 @@ func MakeAttestHTTPCallHandler(
 7. Finally, the Nonclave verifies the attestation and extracts the verified
 response body.
 
-<!-- pluck("go", "function", "main", "hello-http/nonclave/main.go", 46, 67) -->
+<!-- pluck("go", "function", "run", "hello-http/nonclave/main.go", 16, 35) -->
 ```go
-func main() {
+func run(logger *slog.Logger) error {
 	// ...
 	got, err := client.AttestHTTPCall(ctx, TargetMethod, TargetURL)
 	if err != nil {
-		logger.Error("attesting http call", slog.String("error", err.Error()))
-		return
+		return fmt.Errorf("attesting http call: %w", err)
 	}
 
 	attestation := got.Attestation
@@ -228,8 +221,7 @@ func main() {
 		tee.WithVerifyDebug(verifyDebug),
 	)
 	if err != nil {
-		logger.Error("verifying attestation", slog.String("error", err.Error()))
-		return
+		return fmt.Errorf("verifying attestation: %w", err)
 	}
 	logger.Info("verified attestation")
 

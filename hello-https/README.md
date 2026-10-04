@@ -29,9 +29,9 @@ for the Enclave's attested certificate. While this request is not protected by
 TLS, the attestation is used to prove the authenticity and integrity of the
 certificate.
 
-<!-- pluck("go", "function", "main", "hello-https/nonclave/main.go", 47, 68) -->
+<!-- pluck("go", "function", "run", "hello-https/nonclave/main.go", 11, 30) -->
 ```go
-func main() {
+func run(logger *slog.Logger) error {
 	// ...
 	proxyURL := "http://" + net.JoinHostPort(host, strconv.Itoa(port))
 	client := networking.NewClient(proxyURL)
@@ -40,8 +40,7 @@ func main() {
 	defer certCancel()
 	attestedCert, err := client.AttestCertChain(certCtx)
 	if err != nil {
-		logger.Error("attesting cert", slog.String("error", err.Error()))
-		return
+		return fmt.Errorf("attesting cert: %w", err)
 	}
 
 	verifiedCert, err := verifier.Verify(
@@ -50,8 +49,7 @@ func main() {
 		tee.WithVerifyDebug(verifyDebug),
 	)
 	if err != nil {
-		logger.Error("verifying cert attestation", slog.String("error", err.Error()))
-		return
+		return fmt.Errorf("verifying cert attestation: %w", err)
 	}
 	logger.Info("verified cert attestation")
 	// ...
@@ -62,9 +60,9 @@ func main() {
 forwards HTTP requests to the Enclave, as well as a Reverse TLS Proxy that listens on
 8443 and forwards HTTPS requests to the Enclave.
 
-<!-- pluck("go", "function", "main", "hello-https/proxy/main.go", 17, 47) -->
+<!-- pluck("go", "function", "run", "hello-https/proxy/main.go", 6, 34) -->
 ```go
-func main() {
+func run(logger *slog.Logger) error {
 	// ...
 	revCtx, revCancel := context.WithTimeout(context.Background(), DefaultTimeout)
 	defer revCancel()
@@ -77,8 +75,7 @@ func main() {
 		logger,
 	)
 	if err != nil {
-		logger.Error("making revProxy server", slog.String("error", err.Error()))
-		return
+		return fmt.Errorf("making revProxy server: %w", err)
 	}
 	defer revProxy.Close()
 
@@ -93,8 +90,7 @@ func main() {
 		logger,
 	)
 	if err != nil {
-		logger.Error("making revProxyTLS server", slog.String("error", err.Error()))
-		return
+		return fmt.Errorf("making revProxyTLS server: %w", err)
 	}
 	// ...
 }
@@ -105,15 +101,14 @@ the Enclave's attested certificate, and an HTTPS server with a handler that
 makes the requested HTTPS call on behalf of the Nonclave. For now, let's just
 look at the HTTP server initialization.
 
-<!-- pluck("go", "function", "main", "hello-https/enclave/main.go", 24, 51) -->
+<!-- pluck("go", "function", "run", "hello-https/enclave/main.go", 12, 37) -->
 ```go
-func main() {
+func run(logger *slog.Logger) error {
 	// ...
 	domain, _ := config.Enclave.GetArg(DomainKey, tee.DefaultDomain).(string)
 	certProvider, err := tee.NewSelfSignedCertProvider(domain, tee.DefaultIP, tee.DefaultValidity)
 	if err != nil {
-		logger.Error("making certProvider", slog.String("error", err.Error()))
-		return
+		return fmt.Errorf("making certProvider: %w", err)
 	}
 
 	serverMux := http.NewServeMux()
@@ -132,17 +127,16 @@ func main() {
 		logger,
 	)
 	if err != nil {
-		logger.Error("creating server", slog.String("error", err.Error()))
-		return
+		return fmt.Errorf("creating server: %w", err)
 	}
 	defer server.Close()
 	// ...
 }
 ```
 
-<!-- pluck("go", "function", "main", "hello-https/enclave/main.go", 80, 87) -->
+<!-- pluck("go", "function", "run", "hello-https/enclave/main.go", 64, 71) -->
 ```go
-func main() {
+func run(logger *slog.Logger) error {
 	// ...
 	go func() {
 		logger.Info("enclave server started", slog.String("addr", server.Addr()))
@@ -158,17 +152,16 @@ func main() {
 4. After retrieving and verifying the attested certificate, the Nonclave creates
 a client that uses the attested certificate to secure future HTTPS requests.
 
-<!-- pluck("go", "function", "main", "hello-https/nonclave/main.go", 69, 77) -->
+<!-- pluck("go", "function", "run", "hello-https/nonclave/main.go", 31, 38) -->
 ```go
-func main() {
+func run(logger *slog.Logger) error {
 	// ...
 	proxyTLSURL := "https://" + net.JoinHostPort(host, strconv.Itoa(portTLS))
 	clientTLS := networking.NewClient(proxyTLSURL)
 	domain, _ := config.Nonclave.GetArg(DomainKey, tee.DefaultDomain).(string)
 	err = clientTLS.AddCertChain(verifiedCert.UserData, domain)
 	if err != nil {
-		logger.Error("adding cert", slog.String("error", err.Error()))
-		return
+		return fmt.Errorf("adding cert: %w", err)
 	}
 	// ...
 }
@@ -220,16 +213,15 @@ Remember that the Nonclave is actually hitting the Reverse TLS Proxy first, but
 the TLS connection is terminated at the Enclave. The Proxy transparently
 forwards the request and cannot determine what is inside.
 
-<!-- pluck("go", "function", "main", "hello-https/nonclave/main.go", 79, 86) -->
+<!-- pluck("go", "function", "run", "hello-https/nonclave/main.go", 40, 46) -->
 ```go
-func main() {
+func run(logger *slog.Logger) error {
 	// ...
 	httpsCtx, httpsCancel := context.WithTimeout(context.Background(), DefaultTimeout)
 	defer httpsCancel()
 	attestedCall, err := clientTLS.AttestHTTPSCall(httpsCtx, TargetMethod, TargetURL)
 	if err != nil {
-		logger.Error("attesting https call", slog.String("error", err.Error()))
-		return
+		return fmt.Errorf("attesting https call: %w", err)
 	}
 	// ...
 }
@@ -239,14 +231,13 @@ func main() {
 creates a "proxied" client, which is a `http.Client` configured to send requests
 to our TLS Proxy (via sockets or virtual sockets depending on the platform).
 
-<!-- pluck("go", "function", "main", "hello-https/enclave/main.go", 52, 78) -->
+<!-- pluck("go", "function", "run", "hello-https/enclave/main.go", 38, 62) -->
 ```go
-func main() {
+func run(logger *slog.Logger) error {
 	// ...
 	proxiedClient, err := tee.NewProxiedClient(config.Platform, config.Proxy.AddrTLS)
 	if err != nil {
-		logger.Error("making proxied client", slog.String("error", err.Error()))
-		return
+		return fmt.Errorf("making proxied client: %w", err)
 	}
 
 	serverTLSMux := http.NewServeMux()
@@ -266,8 +257,7 @@ func main() {
 		logger,
 	)
 	if err != nil {
-		logger.Error("creating serverTLS", slog.String("error", err.Error()))
-		return
+		return fmt.Errorf("creating serverTLS: %w", err)
 	}
 	// ...
 }
@@ -334,9 +324,9 @@ keep track of all the different servers and proxies at this point. Remember that
 we use Proxy to refer to the application as a whole, which in this particular
 example includes a reverse proxy, reverse TLS proxy, and a TLS proxy.
 
-<!-- pluck("go", "function", "main", "hello-https/proxy/main.go", 52, 63) -->
+<!-- pluck("go", "function", "run", "hello-https/proxy/main.go", 39, 49) -->
 ```go
-func main() {
+func run(logger *slog.Logger) error {
 	// ...
 	proxyTLS, err := tee.NewProxyTLS(
 		proxyTLSCtx,
@@ -345,8 +335,7 @@ func main() {
 		logger,
 	)
 	if err != nil {
-		logger.Error("making proxyTLS server", slog.String("error", err.Error()))
-		return
+		return fmt.Errorf("making proxyTLS server: %w", err)
 	}
 	defer proxyTLS.Close()
 	// ...
@@ -358,9 +347,9 @@ and extracts the response body. That's it! We now have an attested response from
 HTTP Bin that anybody can independently verify. Moreover, we made these requests
 with HTTPS, so we can now include sensitive information in our requests if needed.
 
-<!-- pluck("go", "function", "main", "hello-https/nonclave/main.go", 87, 109) -->
+<!-- pluck("go", "function", "run", "hello-https/nonclave/main.go", 47, 67) -->
 ```go
-func main() {
+func run(logger *slog.Logger) error {
 	// ...
 	verifiedCall, err := verifier.Verify(
 		attestedCall.Attestation,
@@ -368,15 +357,13 @@ func main() {
 		tee.WithVerifyDebug(verifyDebug),
 	)
 	if err != nil {
-		logger.Error("verifying call attestation", slog.String("error", err.Error()))
-		return
+		return fmt.Errorf("verifying call attestation: %w", err)
 	}
 
 	httpBinResp := HTTPBinGetResponse{}
 	err = json.Unmarshal(verifiedCall.UserData, &httpBinResp)
 	if err != nil {
-		logger.Error("unmarshaling httpbin response", slog.String("error", err.Error()))
-		return
+		return fmt.Errorf("unmarshaling httpbin response: %w", err)
 	}
 
 	logger.Info(
@@ -384,6 +371,7 @@ func main() {
 		slog.String("url", httpBinResp.URL),
 		slog.Any("response", httpBinResp),
 	)
+	// ...
 }
 ```
 

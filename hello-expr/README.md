@@ -29,9 +29,9 @@ make
 1. The Client defines an expression and a set of environment variables. In this
 example, the Client wants to fetch some data from a remote server and verify
 that the URL matches the expected value.
-<!-- pluck("go", "function", "main", "hello-expr/nonclave/main.go", 41, 50) -->
+<!-- pluck("go", "function", "run", "hello-expr/nonclave/main.go", 11, 20) -->
 ```go
-func main() {
+func run(logger *slog.Logger) error {
 	// ...
 	ctx, cancel := context.WithTimeout(context.Background(), DefaultTimeout)
 	defer cancel()
@@ -103,14 +103,13 @@ func MakeHTTPGet(client *http.Client) engine.ExprEngineFn {
 3. Further down we see how the Enclave registers the `httpGet` function with the
 Expr engine.
 
-<!-- pluck("go", "function", "main", "hello-expr/enclave/main.go", 23, 43) -->
+<!-- pluck("go", "function", "run", "hello-expr/enclave/main.go", 11, 29) -->
 ```go
-func main() {
+func run(logger *slog.Logger) error {
 	// ...
 	client, err := tee.NewProxiedClient(config.Platform, config.Proxy.Addr)
 	if err != nil {
-		logger.Error("making proxied client", slog.String("error", err.Error()))
-		return
+		return fmt.Errorf("making proxied client: %w", err)
 	}
 
 	whitelist := map[string]engine.ExprEngineFn{
@@ -118,8 +117,7 @@ func main() {
 	}
 	exprEngine, err := engine.NewExprEngineWithWhitelist(whitelist)
 	if err != nil {
-		logger.Error("making expr engine", slog.String("error", err.Error()))
-		return
+		return fmt.Errorf("making expr engine: %w", err)
 	}
 
 	serverMux := http.NewServeMux()
@@ -242,14 +240,13 @@ func (e *ExprEngine) Execute(
 7. When the Client receives the Enclave's response, it first verifies the
 attestation.
 
-<!-- pluck("go", "function", "main", "hello-expr/nonclave/main.go", 51, 59) -->
+<!-- pluck("go", "function", "run", "hello-expr/nonclave/main.go", 21, 28) -->
 ```go
-func main() {
+func run(logger *slog.Logger) error {
 	// ...
 	got, err := client.AttestExpr(ctx, expression, env)
 	if err != nil {
-		logger.Error("attesting expr", slog.String("error", err.Error()))
-		return
+		return fmt.Errorf("attesting expr: %w", err)
 	}
 
 	attestation := got.Attestation
@@ -270,25 +267,23 @@ type AttestedExpr struct {
 }
 ```
 
-<!-- pluck("go", "function", "main", "hello-expr/nonclave/main.go", 60, 79) -->
+<!-- pluck("go", "function", "run", "hello-expr/nonclave/main.go", 29, 46) -->
 ```go
-func main() {
+func run(logger *slog.Logger) error {
 	// ...
 		attestation,
 		tee.WithVerifyMeasurement(measurement),
 		tee.WithVerifyDebug(verifyDebug),
 	)
 	if err != nil {
-		logger.Error("verifying attestation", slog.String("error", err.Error()))
-		return
+		return fmt.Errorf("verifying attestation: %w", err)
 	}
 	logger.Info("verified attestation")
 
 	attestedExpr := networking.AttestedExpr{}
 	err = json.Unmarshal(verified.UserData, &attestedExpr)
 	if err != nil {
-		logger.Error("unmarshaling attested expression", slog.String("error", err.Error()))
-		return
+		return fmt.Errorf("unmarshaling attested expression: %w", err)
 	}
 
 	logger.Info(

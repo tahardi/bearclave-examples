@@ -4,6 +4,7 @@ import (
 	"context"
 	"errors"
 	"flag"
+	"fmt"
 	"log/slog"
 	"net/http"
 	"os"
@@ -29,10 +30,17 @@ func main() {
 	flag.Parse()
 
 	logger := slog.New(slog.NewTextHandler(os.Stdout, nil))
+	err := run(logger)
+	if err != nil {
+		logger.Error("running", slog.String("error", err.Error()))
+		os.Exit(1)
+	}
+}
+
+func run(logger *slog.Logger) error {
 	config, err := setup.LoadConfig(configFile)
 	if err != nil {
-		logger.Error("loading config", slog.String("error", err.Error()))
-		return
+		return fmt.Errorf("loading config: %w", err)
 	}
 	logger.Info("loaded config", slog.Any(configFile, config))
 
@@ -47,8 +55,7 @@ func main() {
 		logger,
 	)
 	if err != nil {
-		logger.Error("making inbound server", slog.String("error", err.Error()))
-		return
+		return fmt.Errorf("making inbound server: %w", err)
 	}
 	defer revProxy.Close()
 
@@ -64,8 +71,7 @@ func main() {
 		logger,
 	)
 	if err != nil {
-		logger.Error("making outbound server", slog.String("error", err.Error()))
-		return
+		return fmt.Errorf("making outbound server: %w", err)
 	}
 	defer proxy.Close()
 
@@ -80,6 +86,8 @@ func main() {
 	logger.Info("proxy outbound server started")
 	err = proxy.Serve()
 	if err != nil {
-		logger.Error("outbound server error", slog.String("error", err.Error()))
+		return fmt.Errorf("serving outbound server: %w", err)
 	}
+
+	return nil
 }

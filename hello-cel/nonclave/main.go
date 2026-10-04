@@ -3,7 +3,9 @@ package main
 import (
 	"context"
 	"encoding/json"
+	"errors"
 	"flag"
+	"fmt"
 	"log/slog"
 	"net"
 	"os"
@@ -22,6 +24,8 @@ const (
 	DefaultTimeout     = 15 * time.Second
 	DefaultVerifyDebug = false
 )
+
+var ErrExpectedStringOutput = errors.New("expected string output from expression")
 
 var (
 	configFile  string
@@ -59,17 +63,23 @@ func main() {
 	flag.Parse()
 
 	logger := slog.New(slog.NewTextHandler(os.Stdout, nil))
+	err := run(logger)
+	if err != nil {
+		logger.Error("running nonclave", slog.String("error", err.Error()))
+		os.Exit(1)
+	}
+}
+
+func run(logger *slog.Logger) error {
 	config, err := setup.LoadConfig(configFile)
 	if err != nil {
-		logger.Error("loading config", slog.String("error", err.Error()))
-		return
+		return fmt.Errorf("loading config: %w", err)
 	}
 	logger.Info("loaded config", slog.Any(configFile, config))
 
 	verifier, err := tee.NewVerifier(config.Platform)
 	if err != nil {
-		logger.Error("making verifier", slog.String("error", err.Error()))
-		return
+		return fmt.Errorf("making verifier: %w", err)
 	}
 
 	ctx, cancel := context.WithTimeout(context.Background(), DefaultTimeout)
@@ -84,8 +94,7 @@ func main() {
 	expression := `httpGet(targetUrl).url == targetUrl ? "URL Match Success" : "URL Mismatch"`
 	got, err := client.AttestCEL(ctx, expression, env)
 	if err != nil {
-		logger.Error("attesting expr", slog.String("error", err.Error()))
-		return
+		return fmt.Errorf("attesting expr: %w", err)
 	}
 
 	attestation := got.Attestation
@@ -96,16 +105,14 @@ func main() {
 		tee.WithVerifyDebug(verifyDebug),
 	)
 	if err != nil {
-		logger.Error("verifying attestation", slog.String("error", err.Error()))
-		return
+		return fmt.Errorf("verifying attestation: %w", err)
 	}
 	logger.Info("verified attestation")
 
 	attestedCEL := networking.AttestedCEL{}
 	err = json.Unmarshal(verified.UserData, &attestedCEL)
 	if err != nil {
-		logger.Error("unmarshaling attested cel", slog.String("error", err.Error()))
-		return
+		return fmt.Errorf("unmarshaling attested cel: %w", err)
 	}
 
 	logger.Info(
@@ -116,8 +123,9 @@ func main() {
 
 	resultString, ok := attestedCEL.Output.(string)
 	if !ok {
-		logger.Error("expected string output from expression", slog.Any("got", attestedCEL.Output))
-		return
+		return fmt.Errorf("%w: got %v", ErrExpectedStringOutput, attestedCEL.Output)
 	}
 	logger.Info("expression result:", slog.String("value", resultString))
+
+	return nil
 }

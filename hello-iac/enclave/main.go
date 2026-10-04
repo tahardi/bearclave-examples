@@ -3,6 +3,7 @@ package main
 import (
 	"context"
 	"flag"
+	"fmt"
 	"log/slog"
 	"net/http"
 	"os"
@@ -30,17 +31,23 @@ func main() {
 	flag.Parse()
 
 	logger := slog.New(slog.NewTextHandler(os.Stdout, nil))
+	err := run(logger)
+	if err != nil {
+		logger.Error("running", slog.String("error", err.Error()))
+		os.Exit(1)
+	}
+}
+
+func run(logger *slog.Logger) error {
 	config, err := setup.LoadConfig(configFile)
 	if err != nil {
-		logger.Error("loading config", slog.Any("error", err))
-		return
+		return fmt.Errorf("loading config: %w", err)
 	}
 	logger.Info("loaded config", slog.Any(configFile, config))
 
 	attester, err := tee.NewAttester(config.Platform)
 	if err != nil {
-		logger.Error("making attester", slog.String("error", err.Error()))
-		return
+		return fmt.Errorf("making attester: %w", err)
 	}
 
 	serverMux := http.NewServeMux()
@@ -59,16 +66,14 @@ func main() {
 		logger,
 	)
 	if err != nil {
-		logger.Error("making server", slog.String("error", err.Error()))
-		return
+		return fmt.Errorf("making server: %w", err)
 	}
 
 	logger.Info("enclave server started", slog.String("addr", server.Addr()))
 	err = server.Serve()
 	if err != nil {
-		logger.Error(
-			"enclave server error",
-			slog.String("error", err.Error()),
-		)
+		return fmt.Errorf("serving enclave server: %w", err)
 	}
+
+	return nil
 }

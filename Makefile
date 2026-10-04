@@ -40,16 +40,27 @@ tf:
 	@make -C ./infra/
 
 .PHONY: test-unit
-test-unit: tidy test-internal-unit
+test-unit: tidy test-internal-unit test-nonclave
 
 .PHONY: test-internal-unit
 test-internal-unit:
 	@go test -v -count=1 -race ./internal/...
 
+.PHONY: test-nonclave
+test-nonclave:
+	@go test -v -count=1 -race \
+		./hello-world/nonclave/ \
+		./hello-http/nonclave/ \
+		./hello-https/nonclave/ \
+		./hello-expr/nonclave/ \
+		./hello-cel/nonclave/ \
+		./hello-iac/nonclave/
+
 .PHONY: test-examples
 test-examples: \
 	hello-world \
 	hello-http \
+	hello-https \
 	hello-expr \
 	hello-cel \
 	hello-iac
@@ -61,6 +72,10 @@ hello-world:
 .PHONY: hello-http
 hello-http:
 	@make -C ./hello-http/
+
+.PHONY: hello-https
+hello-https:
+	@make -C ./hello-https/
 
 .PHONY: hello-expr
 hello-expr:
@@ -78,6 +93,7 @@ hello-iac:
 clean:
 	@make -C ./hello-world/ clean
 	@make -C ./hello-http/ clean
+	@make -C ./hello-https/ clean
 	@make -C ./hello-expr/ clean
 	@make -C ./hello-cel/ clean
 	@make -C ./hello-iac/ clean

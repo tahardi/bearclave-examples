@@ -4,6 +4,7 @@ import (
 	"context"
 	"encoding/json"
 	"flag"
+	"fmt"
 	"log/slog"
 	"net"
 	"os"
@@ -77,17 +78,23 @@ func main() {
 	flag.Parse()
 
 	logger := slog.New(slog.NewTextHandler(os.Stdout, nil))
+	err := run(logger)
+	if err != nil {
+		logger.Error("running nonclave", slog.String("error", err.Error()))
+		os.Exit(1)
+	}
+}
+
+func run(logger *slog.Logger) error {
 	config, err := setup.LoadConfig(configFile)
 	if err != nil {
-		logger.Error("loading config", slog.String("error", err.Error()))
-		return
+		return fmt.Errorf("loading config: %w", err)
 	}
 	logger.Info("loaded config", slog.Any(configFile, config))
 
 	verifier, err := tee.NewVerifier(config.Platform)
 	if err != nil {
-		logger.Error("making verifier", slog.String("error", err.Error()))
-		return
+		return fmt.Errorf("making verifier: %w", err)
 	}
 
 	proxyURL := "http://" + net.JoinHostPort(host, strconv.Itoa(port))
@@ -97,8 +104,7 @@ func main() {
 	defer certCancel()
 	attestedCert, err := client.AttestCertChain(certCtx)
 	if err != nil {
-		logger.Error("attesting cert", slog.String("error", err.Error()))
-		return
+		return fmt.Errorf("attesting cert: %w", err)
 	}
 
 	verifiedCert, err := verifier.Verify(
@@ -107,8 +113,7 @@ func main() {
 		tee.WithVerifyDebug(verifyDebug),
 	)
 	if err != nil {
-		logger.Error("verifying cert attestation", slog.String("error", err.Error()))
-		return
+		return fmt.Errorf("verifying cert attestation: %w", err)
 	}
 	logger.Info("verified cert attestation")
 
@@ -117,8 +122,7 @@ func main() {
 	domain, _ := config.Nonclave.GetArg(DomainKey, tee.DefaultDomain).(string)
 	err = clientTLS.AddCertChain(verifiedCert.UserData, domain)
 	if err != nil {
-		logger.Error("adding cert", slog.String("error", err.Error()))
-		return
+		return fmt.Errorf("adding cert: %w", err)
 	}
 
 	logger.Info("attesting https call", slog.String("revProxyTLS", proxyTLSURL))
@@ -126,8 +130,7 @@ func main() {
 	defer httpsCancel()
 	attestedCall, err := clientTLS.AttestHTTPSCall(httpsCtx, TargetMethod, TargetURL)
 	if err != nil {
-		logger.Error("attesting https call", slog.String("error", err.Error()))
-		return
+		return fmt.Errorf("attesting https call: %w", err)
 	}
 
 	verifiedCall, err := verifier.Verify(
@@ -136,15 +139,13 @@ func main() {
 		tee.WithVerifyDebug(verifyDebug),
 	)
 	if err != nil {
-		logger.Error("verifying call attestation", slog.String("error", err.Error()))
-		return
+		return fmt.Errorf("verifying call attestation: %w", err)
 	}
 
 	httpBinResp := HTTPBinGetResponse{}
 	err = json.Unmarshal(verifiedCall.UserData, &httpBinResp)
 	if err != nil {
-		logger.Error("unmarshaling httpbin response", slog.String("error", err.Error()))
-		return
+		return fmt.Errorf("unmarshaling httpbin response: %w", err)
 	}
 
 	logger.Info(
@@ -152,4 +153,6 @@ func main() {
 		slog.String("url", httpBinResp.URL),
 		slog.Any("response", httpBinResp),
 	)
+
+	return nil
 }

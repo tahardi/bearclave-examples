@@ -83,10 +83,17 @@ func main() {
 	flag.Parse()
 
 	logger := slog.New(slog.NewTextHandler(os.Stdout, nil))
+	err := run(logger)
+	if err != nil {
+		logger.Error("running", slog.String("error", err.Error()))
+		os.Exit(1)
+	}
+}
+
+func run(logger *slog.Logger) error {
 	config, err := setup.LoadConfig(configFile)
 	if err != nil {
-		logger.Error("loading config", slog.String("error", err.Error()))
-		return
+		return fmt.Errorf("loading config: %w", err)
 	}
 	logger.Info("loaded config", slog.Any(configFile, config))
 
@@ -99,8 +106,7 @@ func main() {
 		config.Proxy.Addr,
 	)
 	if err != nil {
-		logger.Error("making socket", slog.String("error", err.Error()))
-		return
+		return fmt.Errorf("making socket: %w", err)
 	}
 	defer socket.Close()
 
@@ -119,13 +125,14 @@ func main() {
 		logger,
 	)
 	if err != nil {
-		logger.Error("making server", slog.String("error", err.Error()))
-		return
+		return fmt.Errorf("making server: %w", err)
 	}
 
 	logger.Info("proxy server started", slog.String("addr", server.Addr()))
 	err = server.Serve()
 	if err != nil && !errors.Is(err, http.ErrServerClosed) {
-		logger.Error("proxy server error", slog.String("error", err.Error()))
+		return fmt.Errorf("serving proxy server: %w", err)
 	}
+
+	return nil
 }
