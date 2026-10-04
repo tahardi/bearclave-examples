@@ -3,7 +3,6 @@ package main
 import (
 	"context"
 	"flag"
-	"fmt"
 	"log/slog"
 	"net"
 	"os"
@@ -66,22 +65,17 @@ func main() {
 	flag.Parse()
 
 	logger := slog.New(slog.NewTextHandler(os.Stdout, nil))
-	if err := run(logger); err != nil {
-		logger.Error("running nonclave", slog.String("error", err.Error()))
-		os.Exit(1)
-	}
-}
-
-func run(logger *slog.Logger) error {
 	config, err := setup.LoadConfig(configFile)
 	if err != nil {
-		return fmt.Errorf("loading config: %w", err)
+		logger.Error("loading config", slog.String("error", err.Error()))
+		return
 	}
 	logger.Info("loaded config", slog.Any(configFile, config))
 
 	verifier, err := tee.NewVerifier(config.Platform)
 	if err != nil {
-		return fmt.Errorf("making verifier: %w", err)
+		logger.Error("making verifier", slog.String("error", err.Error()))
+		return
 	}
 
 	ctx, cancel := context.WithTimeout(context.Background(), DefaultTimeout)
@@ -92,7 +86,8 @@ func run(logger *slog.Logger) error {
 
 	got, err := client.AttestIaC(ctx, script)
 	if err != nil {
-		return fmt.Errorf("attesting iac: %w", err)
+		logger.Error("attesting iac", slog.String("error", err.Error()))
+		return
 	}
 
 	measurement := config.Nonclave.Measurement
@@ -102,14 +97,15 @@ func run(logger *slog.Logger) error {
 		tee.WithVerifyDebug(verifyDebug),
 	)
 	if err != nil {
-		return fmt.Errorf("verifying attestation: %w", err)
+		logger.Error("verifying attestation", slog.String("error", err.Error()))
+		return
 	}
 	logger.Info("verified attestation")
 
 	err = networking.VerifyIaCPlan(verified.UserData, script, got.Plan)
 	if err != nil {
-		return fmt.Errorf("verifying plan: %w", err)
+		logger.Error("verifying plan", slog.String("error", err.Error()))
+		return
 	}
 	logger.Info("verified plan", slog.String("plan", string(got.Plan)))
-	return nil
 }
