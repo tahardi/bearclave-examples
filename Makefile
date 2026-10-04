@@ -53,7 +53,8 @@ test-nonclave:
 		./hello-http/nonclave/ \
 		./hello-https/nonclave/ \
 		./hello-expr/nonclave/ \
-		./hello-cel/nonclave/
+		./hello-cel/nonclave/ \
+		./hello-iac/nonclave/
 
 .PHONY: test-examples
 test-examples: \
