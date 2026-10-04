@@ -19,3 +19,6 @@ client-provided expressions.
 - [**Hello, CEL**](./hello-cel) an example demonstrating how to run a Common
 Expression Language (CEL) runtime inside an enclave for executing and attesting
 to arbitrary client-provided expressions.
+- [**Hello, IaC**](./hello-iac) an example demonstrating how to run a Risor
+script inside an enclave to generate an infrastructure plan and attest that
+the client's exact script produced that exact plan.

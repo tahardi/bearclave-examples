@@ -419,3 +419,61 @@ func TestClient_Do(t *testing.T) {
 		assert.ErrorContains(t, err, "reading response body")
 	})
 }
+
+func TestClient_AttestIaC(t *testing.T) {
+	t.Run("happy path", func(t *testing.T) {
+		// given
+		ctx := context.Background()
+		script := `[{type: "aws_s3_bucket", name: "logs"}]`
+		wantPlan := json.RawMessage(`[{"name":"logs","type":"aws_s3_bucket"}]`)
+		want := &tee.AttestResult{Base: &bearclave.AttestResult{Report: []byte("attestation")}}
+
+		handler := http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+			assert.Equal(t, http.MethodPost, r.Method)
+			assert.Contains(t, r.URL.Path, networking.AttestIaCPath)
+
+			req := networking.AttestIaCRequest{}
+			err := json.NewDecoder(r.Body).Decode(&req)
+			assert.NoError(t, err)
+			assert.Equal(t, script, req.Script)
+
+			resp := networking.AttestIaCResponse{Plan: wantPlan, Attestation: want}
+			writeResponse(t, w, resp)
+		})
+
+		server := httptest.NewServer(handler)
+		defer server.Close()
+
+		client := networking.NewClientWithClient(server.URL, server.Client())
+
+		// when
+		got, err := client.AttestIaC(ctx, script)
+
+		// then
+		require.NoError(t, err)
+		assert.JSONEq(t, string(wantPlan), string(got.Plan))
+		assert.Equal(t, want, got.Attestation)
+	})
+
+	t.Run("error - doing attest request", func(t *testing.T) {
+		// given
+		ctx := context.Background()
+		script := `[{type: "aws_s3_bucket", name: "logs"}]`
+
+		handler := http.HandlerFunc(func(w http.ResponseWriter, _ *http.Request) {
+			writeError(w, assert.AnError)
+		})
+
+		server := httptest.NewServer(handler)
+		defer server.Close()
+
+		client := networking.NewClientWithClient(server.URL, server.Client())
+
+		// when
+		_, err := client.AttestIaC(ctx, script)
+
+		// then
+		require.ErrorIs(t, err, networking.ErrClient)
+		assert.ErrorContains(t, err, "doing attest iac request")
+	})
+}
