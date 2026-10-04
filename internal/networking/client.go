@@ -176,6 +176,26 @@ func (c *Client) AttestExpr(
 	return attestExprResponse, nil
 }
 
+func (c *Client) AttestIaC(
+	ctx context.Context,
+	script string,
+) (AttestIaCResponse, error) {
+	attestIaCRequest := AttestIaCRequest{Script: script}
+	attestIaCResponse := AttestIaCResponse{}
+	err := c.Do(
+		ctx,
+		"POST",
+		AttestIaCPath,
+		attestIaCRequest,
+		&attestIaCResponse,
+	)
+	if err != nil {
+		return AttestIaCResponse{},
+			fmt.Errorf("doing attest iac request: %w", err)
+	}
+	return attestIaCResponse, nil
+}
+
 func (c *Client) AttestUserData(
 	ctx context.Context,
 	nonce []byte,

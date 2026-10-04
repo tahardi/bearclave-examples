@@ -21,6 +21,7 @@ const (
 	AttestExprPath      = "/attest-expr"
 	AttestHTTPCallPath  = "/attest-http-call"
 	AttestHTTPSCallPath = "/attest-https-call"
+	AttestIaCPath       = "/attest-iac"
 	AttestUserDataPath  = "/attest-user-data"
 	DefaultTimeout      = 15 * time.Second
 )
@@ -202,6 +203,60 @@ func MakeAttestExprHandler(
 			Attestation: attestation,
 		}
 		WriteResponse(w, apiCallResp)
+	}
+}
+
+type AttestIaCRequest struct {
+	Script string `json:"script"`
+}
+type AttestIaCResponse struct {
+	Plan        json.RawMessage   `json:"plan"`
+	Attestation *tee.AttestResult `json:"attestation"`
+}
+
+func MakeAttestIaCHandler(
+	risorEngine *engine.RisorEngine,
+	risorTimeout time.Duration,
+	attester *tee.Attester,
+	logger *slog.Logger,
+) http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		logger.Info("received attest IaC request")
+		iacReq := AttestIaCRequest{}
+		err := json.NewDecoder(r.Body).Decode(&iacReq)
+		if err != nil {
+			logger.Error("decoding request", slog.String("error", err.Error()))
+			WriteError(w, fmt.Errorf("decoding request: %w", err))
+			return
+		}
+
+		ctx, cancel := context.WithTimeout(r.Context(), risorTimeout)
+		defer cancel()
+
+		logger.Info("executing script", slog.String("script", iacReq.Script))
+		output, err := risorEngine.Execute(ctx, iacReq.Script, nil)
+		if err != nil {
+			logger.Error("executing script", slog.String("error", err.Error()))
+			WriteError(w, fmt.Errorf("executing script: %w", err))
+			return
+		}
+
+		plan, err := json.Marshal(output)
+		if err != nil {
+			logger.Error("marshaling plan", slog.String("error", err.Error()))
+			WriteError(w, fmt.Errorf("marshaling plan: %w", err))
+			return
+		}
+
+		logger.Info("attesting plan", slog.String("plan", string(plan)))
+		attestation, err := attester.Attest(tee.WithAttestUserData(IaCDigest(iacReq.Script, plan)))
+		if err != nil {
+			logger.Error("attesting", slog.String("error", err.Error()))
+			WriteError(w, fmt.Errorf("attesting: %w", err))
+			return
+		}
+
+		WriteResponse(w, AttestIaCResponse{Plan: plan, Attestation: attestation})
 	}
 }
 
