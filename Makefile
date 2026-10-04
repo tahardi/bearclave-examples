@@ -59,6 +59,7 @@ test-nonclave:
 test-examples: \
 	hello-world \
 	hello-http \
+	hello-https \
 	hello-expr \
 	hello-cel
 
@@ -69,6 +70,10 @@ hello-world:
 .PHONY: hello-http
 hello-http:
 	@make -C ./hello-http/
+
+.PHONY: hello-https
+hello-https:
+	@make -C ./hello-https/
 
 .PHONY: hello-expr
 hello-expr:
@@ -82,5 +87,6 @@ hello-cel:
 clean:
 	@make -C ./hello-world/ clean
 	@make -C ./hello-http/ clean
+	@make -C ./hello-https/ clean
 	@make -C ./hello-expr/ clean
 	@make -C ./hello-cel/ clean
