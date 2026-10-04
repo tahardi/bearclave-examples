@@ -51,7 +51,8 @@ test-examples: \
 	hello-world \
 	hello-http \
 	hello-expr \
-	hello-cel
+	hello-cel \
+	hello-iac
 
 .PHONY: hello-world
 hello-world:
@@ -69,9 +70,14 @@ hello-expr:
 hello-cel:
 	@make -C ./hello-cel/
 
+.PHONY: hello-iac
+hello-iac:
+	@make -C ./hello-iac/
+
 .PHONY: clean
 clean:
 	@make -C ./hello-world/ clean
 	@make -C ./hello-http/ clean
 	@make -C ./hello-expr/ clean
 	@make -C ./hello-cel/ clean
+	@make -C ./hello-iac/ clean

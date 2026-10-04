@@ -3,6 +3,7 @@ module github.com/tahardi/bearclave-examples
 go 1.26.0
 
 require (
+	github.com/deepnoodle-ai/risor/v2 v2.2.0
 	github.com/expr-lang/expr v1.17.8
 	github.com/google/cel-go v0.31.0
 	github.com/spf13/viper v1.21.0
@@ -13,6 +14,7 @@ require (
 require (
 	cel.dev/expr v0.25.1 // indirect
 	github.com/antlr4-go/antlr/v4 v4.13.1 // indirect
+	github.com/deepnoodle-ai/wonton v0.0.37 // indirect
 	github.com/fsnotify/fsnotify v1.9.0 // indirect
 	github.com/fxamacker/cbor/v2 v2.9.4 // indirect
 	github.com/go-viper/mapstructure/v2 v2.4.0 // indirect
@@ -38,7 +40,7 @@ require (
 	golang.org/x/exp v0.0.0-20240823005443-9b4947da3948 // indirect
 	golang.org/x/net v0.55.0 // indirect
 	golang.org/x/sync v0.20.0 // indirect
-	golang.org/x/sys v0.45.0 // indirect
+	golang.org/x/sys v0.47.0 // indirect
 	golang.org/x/text v0.37.0 // indirect
 	google.golang.org/genproto/googleapis/api v0.0.0-20240826202546-f6391c0de4c7 // indirect
 	google.golang.org/genproto/googleapis/rpc v0.0.0-20240826202546-f6391c0de4c7 // indirect

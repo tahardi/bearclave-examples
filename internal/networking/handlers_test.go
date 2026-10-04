@@ -690,3 +690,136 @@ func TestMakeAttestUserDataHandler(t *testing.T) {
 		assert.Contains(t, recorder.Body.String(), "attesting")
 	})
 }
+
+func TestMakeAttestIaCHandler(t *testing.T) {
+	script := `["us-east-1", "us-west-2"].map(r => ({type: "aws_s3_bucket", name: "logs-" + r}))`
+
+	t.Run("happy path", func(t *testing.T) {
+		// given
+		attester, err := tee.NewAttester(tee.NoTEE)
+		require.NoError(t, err)
+		verifier, err := tee.NewVerifier(tee.NoTEE)
+		require.NoError(t, err)
+
+		var logBuffer bytes.Buffer
+		logger := slog.New(slog.NewTextHandler(&logBuffer, nil))
+
+		wantPlan := `[{"name":"logs-us-east-1","type":"aws_s3_bucket"},{"name":"logs-us-west-2","type":"aws_s3_bucket"}]`
+		recorder := httptest.NewRecorder()
+		body := networking.AttestIaCRequest{Script: script}
+		req := makeRequest(t, "POST", networking.AttestIaCPath, body)
+
+		handler := networking.MakeAttestIaCHandler(
+			engine.NewRisorEngine(),
+			defaultTimeout,
+			attester,
+			logger,
+		)
+
+		// when
+		handler.ServeHTTP(recorder, req)
+
+		// then
+		assert.Equal(t, http.StatusOK, recorder.Code)
+
+		response := networking.AttestIaCResponse{}
+		err = json.NewDecoder(recorder.Body).Decode(&response)
+		require.NoError(t, err)
+		assert.JSONEq(t, wantPlan, string(response.Plan))
+
+		verified, err := verifier.Verify(response.Attestation)
+		require.NoError(t, err)
+
+		err = networking.VerifyIaCPlan(verified.UserData, script, response.Plan)
+		require.NoError(t, err)
+
+		tamperedPlan := []byte(`[{"name":"logs-us-east-1","type":"aws_iam_user"}]`)
+		err = networking.VerifyIaCPlan(verified.UserData, script, tamperedPlan)
+		assert.ErrorIs(t, err, networking.ErrIaCDigestMismatch)
+	})
+
+	t.Run("error - decoding request", func(t *testing.T) {
+		// given
+		attester, err := tee.NewAttester(tee.NoTEE)
+		require.NoError(t, err)
+
+		var logBuffer bytes.Buffer
+		logger := slog.New(slog.NewTextHandler(&logBuffer, nil))
+
+		recorder := httptest.NewRecorder()
+		body := []byte("invalid json")
+		req := makeRequest(t, "POST", networking.AttestIaCPath, body)
+
+		handler := networking.MakeAttestIaCHandler(
+			engine.NewRisorEngine(),
+			defaultTimeout,
+			attester,
+			logger,
+		)
+
+		// when
+		handler.ServeHTTP(recorder, req)
+
+		// then
+		assert.Equal(t, http.StatusInternalServerError, recorder.Code)
+		assert.Contains(t, recorder.Body.String(), "decoding request")
+	})
+
+	t.Run("error - sandbox violation", func(t *testing.T) {
+		// given
+		attester, err := tee.NewAttester(tee.NoTEE)
+		require.NoError(t, err)
+
+		var logBuffer bytes.Buffer
+		logger := slog.New(slog.NewTextHandler(&logBuffer, nil))
+
+		recorder := httptest.NewRecorder()
+		body := networking.AttestIaCRequest{Script: `open("/etc/passwd").read()`}
+		req := makeRequest(t, "POST", networking.AttestIaCPath, body)
+
+		handler := networking.MakeAttestIaCHandler(
+			engine.NewRisorEngine(),
+			defaultTimeout,
+			attester,
+			logger,
+		)
+
+		// when
+		handler.ServeHTTP(recorder, req)
+
+		// then
+		assert.Equal(t, http.StatusInternalServerError, recorder.Code)
+		assert.Contains(t, recorder.Body.String(), "executing script")
+	})
+
+	t.Run("error - attesting plan", func(t *testing.T) {
+		// given
+		base := mocks.NewAttester(t)
+		base.
+			On("Attest", mock.AnythingOfType("[]attestation.AttestOption")).
+			Return(nil, assert.AnError).Once()
+		attester, err := tee.NewAttesterWithBase(base)
+		require.NoError(t, err)
+
+		var logBuffer bytes.Buffer
+		logger := slog.New(slog.NewTextHandler(&logBuffer, nil))
+
+		recorder := httptest.NewRecorder()
+		body := networking.AttestIaCRequest{Script: script}
+		req := makeRequest(t, "POST", networking.AttestIaCPath, body)
+
+		handler := networking.MakeAttestIaCHandler(
+			engine.NewRisorEngine(),
+			defaultTimeout,
+			attester,
+			logger,
+		)
+
+		// when
+		handler.ServeHTTP(recorder, req)
+
+		// then
+		assert.Equal(t, http.StatusInternalServerError, recorder.Code)
+		assert.Contains(t, recorder.Body.String(), "attesting")
+	})
+}
