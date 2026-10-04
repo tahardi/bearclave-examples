@@ -17,14 +17,13 @@ behalf of the Nonclave.
 to send an attest HTTP request to the Enclave. In this case, the Nonclave wants
 the Enclave to make the call `GET http://httpbin.org/get`.
 
-<!-- pluck("go", "function", "main", "hello-http/nonclave/main.go", 35, 51) -->
+<!-- pluck("go", "function", "run", "hello-http/nonclave/main.go", 6, 20) -->
 ```go
-func main() {
+func run(logger *slog.Logger) error {
 	// ...
 	verifier, err := tee.NewVerifier(config.Platform)
 	if err != nil {
-		logger.Error("making verifier", slog.String("error", err.Error()))
-		return
+		return fmt.Errorf("making verifier: %w", err)
 	}
 
 	ctx, cancel := context.WithTimeout(context.Background(), DefaultTimeout)
@@ -34,8 +33,7 @@ func main() {
 	client := networking.NewClient(proxyURL)
 	got, err := client.AttestHTTPCall(ctx, TargetMethod, TargetURL)
 	if err != nil {
-		logger.Error("attesting http call", slog.String("error", err.Error()))
-		return
+		return fmt.Errorf("attesting http call: %w", err)
 	}
 	// ...
 }
@@ -210,14 +208,13 @@ func MakeAttestHTTPCallHandler(
 7. Finally, the Nonclave verifies the attestation and extracts the verified
 response body.
 
-<!-- pluck("go", "function", "main", "hello-http/nonclave/main.go", 46, 67) -->
+<!-- pluck("go", "function", "run", "hello-http/nonclave/main.go", 16, 35) -->
 ```go
-func main() {
+func run(logger *slog.Logger) error {
 	// ...
 	got, err := client.AttestHTTPCall(ctx, TargetMethod, TargetURL)
 	if err != nil {
-		logger.Error("attesting http call", slog.String("error", err.Error()))
-		return
+		return fmt.Errorf("attesting http call: %w", err)
 	}
 
 	attestation := got.Attestation
@@ -228,8 +225,7 @@ func main() {
 		tee.WithVerifyDebug(verifyDebug),
 	)
 	if err != nil {
-		logger.Error("verifying attestation", slog.String("error", err.Error()))
-		return
+		return fmt.Errorf("verifying attestation: %w", err)
 	}
 	logger.Info("verified attestation")
 

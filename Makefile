@@ -40,11 +40,20 @@ tf:
 	@make -C ./infra/
 
 .PHONY: test-unit
-test-unit: tidy test-internal-unit
+test-unit: tidy test-internal-unit test-nonclave
 
 .PHONY: test-internal-unit
 test-internal-unit:
 	@go test -v -count=1 -race ./internal/...
+
+.PHONY: test-nonclave
+test-nonclave:
+	@go test -v -count=1 -race \
+		./hello-world/nonclave/ \
+		./hello-http/nonclave/ \
+		./hello-https/nonclave/ \
+		./hello-expr/nonclave/ \
+		./hello-cel/nonclave/
 
 .PHONY: test-examples
 test-examples: \

@@ -3,6 +3,7 @@ package main
 import (
 	"context"
 	"flag"
+	"fmt"
 	"log/slog"
 	"net"
 	"os"
@@ -58,17 +59,23 @@ func main() {
 	flag.Parse()
 
 	logger := slog.New(slog.NewTextHandler(os.Stdout, nil))
+	err := run(logger)
+	if err != nil {
+		logger.Error("running nonclave", slog.String("error", err.Error()))
+		os.Exit(1)
+	}
+}
+
+func run(logger *slog.Logger) error {
 	config, err := setup.LoadConfig(configFile)
 	if err != nil {
-		logger.Error("loading config", slog.String("error", err.Error()))
-		return
+		return fmt.Errorf("loading config: %w", err)
 	}
 	logger.Info("loaded config", slog.Any(configFile, config))
 
 	verifier, err := tee.NewVerifier(config.Platform)
 	if err != nil {
-		logger.Error("making verifier", slog.String("error", err.Error()))
-		return
+		return fmt.Errorf("making verifier: %w", err)
 	}
 
 	nonce := []byte("random nonce here")
@@ -80,8 +87,7 @@ func main() {
 	defer cancel()
 	got, err := client.AttestUserData(ctx, nonce, want)
 	if err != nil {
-		logger.Error("attesting userdata", slog.String("error", err.Error()))
-		return
+		return fmt.Errorf("attesting userdata: %w", err)
 	}
 
 	measurement := config.Nonclave.Measurement
@@ -92,12 +98,13 @@ func main() {
 		tee.WithVerifyDebug(verifyDebug),
 	)
 	if err != nil {
-		logger.Error("verifying attestation", slog.String("error", err.Error()))
-		return
+		return fmt.Errorf("verifying attestation: %w", err)
 	}
 
 	logger.Info(
 		"attested and verified userdata",
 		slog.String("userdata", string(verified.UserData)),
 	)
+
+	return nil
 }
